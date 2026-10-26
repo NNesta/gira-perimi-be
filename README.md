@@ -1,6 +1,6 @@
-# Gira Perimi — API
+# Tsinda Neza — API
 
-FastAPI backend for **Gira Perimi**, a Kinyarwanda platform for learning Rwanda's road-traffic rules and practising
+FastAPI backend for **Tsinda Neza**, a Kinyarwanda platform for learning Rwanda's road-traffic rules and practising
 the provisional driving-licence theory exam.
 
 - Question bank of **404 official exam questions** (399 used in exams), extracted verbatim from the
@@ -37,7 +37,7 @@ Learners register and sign in **only** with Google; there is no learner email/pa
 
 1. Open [Google Cloud Console → Google Auth Platform](https://console.cloud.google.com/auth/overview) and create a
    project if you have none.
-2. *Branding*: set the app name (Gira Perimi), support email and, for production, your domain.
+2. *Branding*: set the app name (Tsinda Neza), support email and, for production, your domain.
    *Audience*: choose **External**. While the app is in *Testing*, only the test users you list can sign in; click
    **Publish app** to open it to every Gmail account (basic scopes — email, profile, openid — need no Google review).
 3. *Clients → Create client* → **Web application**. Under **Authorized JavaScript origins** add every origin the site

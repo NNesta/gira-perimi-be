@@ -42,7 +42,7 @@ async def get_current_user(request: Request, db: DB) -> User:
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Banza winjire kugira ngo ukomeze.")
     if not user.is_active:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Konti yawe yahagaritswe. Vugana n’ubuyobozi bwa Gira Perimi.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Konti yawe yahagaritswe. Vugana n’ubuyobozi bwa Tsinda Neza.")
     return user
 
 

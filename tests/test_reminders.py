@@ -15,8 +15,8 @@ from tests.conftest import login
 def smtp(monkeypatch):
     """Reminders switched on, with deliveries captured instead of sent."""
     monkeypatch.setattr(settings, "SMTP_HOST", "smtp.example.com")
-    monkeypatch.setattr(settings, "SMTP_FROM", "Gira Perimi <noreply@example.com>")
-    monkeypatch.setattr(settings, "SITE_URL", "https://girape.example")
+    monkeypatch.setattr(settings, "SMTP_FROM", "Tsinda Neza <noreply@example.com>")
+    monkeypatch.setattr(settings, "SITE_URL", "https://tsindaneza.example")
     outbox = []
 
     def deliver(messages):
@@ -43,7 +43,7 @@ async def test_reminders_reach_opted_in_learners_below_their_goal_once_a_day(cli
     assert message["To"] == keza["email"] and "Iminota 10" in message["Subject"]
     body = message.get_body(("plain",)).get_content()
     assert "ibibazo 0 kuri 10" in body and "Hasigaye iminsi 5" in body
-    assert "https://girape.example/ikibaho" in body and "https://girape.example/reka-kwibutswa?token=" in body
+    assert "https://tsindaneza.example/ikibaho" in body and "https://tsindaneza.example/reka-kwibutswa?token=" in body
     assert message["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
     assert message.get_body(("html",)) is not None
 

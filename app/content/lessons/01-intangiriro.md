@@ -2,7 +2,7 @@
 slug: intangiriro
 order: 1
 title: Intangiriro: ikizamini cy’uruhushya rw’agateganyo
-summary: Menya uko ikizamini cy’amategeko y’umuhanda giteye, uko wiyandikisha n’uko wakwiga ukoresheje Gira Perimi kugeza utsinze.
+summary: Menya uko ikizamini cy’amategeko y’umuhanda giteye, uko wiyandikisha n’uko wakwiga ukoresheje Tsinda Neza kugeza utsinze.
 icon: flag
 topics: imyitwarire
 minutes: 6
@@ -44,7 +44,7 @@ Buri kibazo kigira ibisubizo bine (a, b, c, d) kandi kimwe gusa ni cyo cy’ukur
 > [!warning] Icyitonderwa
 > Gukoresha undi muntu ngo agukorere ikizamini ni icyaha gihanwa n’amategeko. Wiga neza, ugatsinda ku bushobozi bwawe.
 
-## Uko wakwiga ukoresheje Gira Perimi
+## Uko wakwiga ukoresheje Tsinda Neza
 
 1. **Iga amasomo** uko akurikiranye. Buri somo rirangirana n’ibyo kwibuka.
 2. **Menya ibyapa** ukoresheje urutonde rw’ibyapa n’amakarita yo kwibuka.
@@ -55,4 +55,4 @@ Buri kibazo kigira ibisubizo bine (a, b, c, d) kandi kimwe gusa ni cyo cy’ukur
 > [!key] Ibyo kwibuka
 > - Ikizamini kigira ibibazo 20 bisubizwa mu minota 20.
 > - Ugomba kubona nibura 12 kuri 20 (60%) kugira ngo utsinde.
-> - Kuri Gira Perimi, iyo umaze gukora ibizamini by’igerageza birenga 10 kandi impuzandengo yawe ikarenga 15/20, tukugira inama yo kujya gukora ikizamini nyirizina.
+> - Kuri Tsinda Neza, iyo umaze gukora ibizamini by’igerageza birenga 10 kandi impuzandengo yawe ikarenga 15/20, tukugira inama yo kujya gukora ikizamini nyirizina.

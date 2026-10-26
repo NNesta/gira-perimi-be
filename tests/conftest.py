@@ -16,7 +16,7 @@ from app.main import app
 from app.models import Admin
 from app.services.content import ContentStore, get_content
 
-ADMIN_EMAIL = "admin@girape.rw"
+ADMIN_EMAIL = "admin@tsindaneza.rw"
 ADMIN_PASSWORD = "Ijambobanga-ryiza-2026"
 GOOGLE_CLIENT_ID = "test-client.apps.googleusercontent.com"
 

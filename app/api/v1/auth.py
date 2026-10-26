@@ -11,7 +11,7 @@ from app.services import auth as auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-SUSPENDED = "Konti yawe yahagaritswe. Vugana n’ubuyobozi bwa Gira Perimi."
+SUSPENDED = "Konti yawe yahagaritswe. Vugana n’ubuyobozi bwa Tsinda Neza."
 
 
 def _start_session(response: Response, user: User) -> None:

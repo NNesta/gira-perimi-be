@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="API ya Gira Perimi: amasomo, ibyapa, imyitozo n’ibizamini by’amategeko y’umuhanda mu Rwanda.",
+    description="API ya Tsinda Neza: amasomo, ibyapa, imyitozo n’ibizamini by’amategeko y’umuhanda mu Rwanda.",
     version="1.0.0",
     lifespan=lifespan,
     # The schema lists the admin API too: keep it off the public internet.

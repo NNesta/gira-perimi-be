@@ -12,7 +12,7 @@ DEV_SECRET = "dev-only-change-me-0123456789abcdef0123456789abcdef"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=BASE_DIR / ".env", env_file_encoding="utf-8", extra="ignore")
 
-    APP_NAME: str = "Gira Perimi API"
+    APP_NAME: str = "Tsinda Neza API"
     ENVIRONMENT: Literal["development", "test", "production"] = "development"
     DATABASE_URL: str = f"sqlite+aiosqlite:///{BASE_DIR / 'gira_perimi.db'}"
     MEDIA_DIR: Path = BASE_DIR / "media"

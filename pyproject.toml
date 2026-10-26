@@ -1,7 +1,7 @@
 [project]
 name = "gira-perimi-be"
 version = "0.1.0"
-description = "Gira Perimi API: Kinyarwanda driving-theory lessons, road signs, practice and timed mock exams for Rwanda."
+description = "Tsinda Neza API: Kinyarwanda driving-theory lessons, road signs, practice and timed mock exams for Rwanda."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

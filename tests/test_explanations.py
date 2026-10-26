@@ -1,4 +1,4 @@
-from tests.conftest import login
+from tests.conftest import ADMIN_EMAIL, login
 from tests.test_admin import admin_login
 from tests.test_exams import answer_all
 
@@ -56,7 +56,8 @@ async def test_admin_question_list(client, content, admin):
     first = page["items"][0]["id"]
     await explain(client, first, "Igisobanuro gishya.", reviewed=True)
     reviewed = (await client.get("/api/v1/admin/questions?status=reviewed")).json()
-    assert [q["id"] for q in reviewed["items"]] == [first] and reviewed["items"][0]["updated_by"] == "admin@girape.rw"
+    assert [q["id"] for q in reviewed["items"]] == [first]
+    assert reviewed["items"][0]["updated_by"] == ADMIN_EMAIL
     assert reviewed["counts"]["reviewed"] == 1 and reviewed["counts"]["edited"] == 1
 
     found = (await client.get("/api/v1/admin/questions", params={"search": "igisobanuro gishya"})).json()

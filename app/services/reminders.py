@@ -114,7 +114,7 @@ def compose(reminder: Reminder) -> EmailMessage:
                 greeting,
                 "\n".join(lines),
                 f"Komeza wige: {dashboard_url}",
-                f"— Gira Perimi\nNtushaka kongera kwibutswa? {unsubscribe_url}",
+                f"— Tsinda Neza\nNtushaka kongera kwibutswa? {unsubscribe_url}",
             ]
         )
     )
@@ -123,14 +123,14 @@ def compose(reminder: Reminder) -> EmailMessage:
         f"""<!doctype html><html lang="rw">
 <body style="margin:0;background:#f4f7fb;font-family:Arial,sans-serif;color:#0d1628">
 <div style="max-width:520px;margin:0 auto;padding:28px 18px">
-  <p style="font-size:20px;font-weight:bold;margin:0 0 18px">Gira<span style="color:#129b68">Perimi</span></p>
+  <p style="font-size:20px;font-weight:bold;margin:0 0 18px">Tsinda<span style="color:#129b68">Neza</span></p>
   <div style="background:#ffffff;border-radius:18px;padding:26px;border:1px solid #e3e8f0">
     <p style="font-size:17px;font-weight:bold;margin:0 0 14px">{html.escape(greeting)}</p>
     {paragraphs}
     <a href="{html.escape(dashboard_url)}" style="display:inline-block;margin-top:14px;background:#129b68;color:#ffffff;
       text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:12px">Komeza wige</a>
   </div>
-  <p style="font-size:12px;color:#5b6576;margin:18px 4px 0">Wahisemo kwibutswa kuri Gira Perimi.
+  <p style="font-size:12px;color:#5b6576;margin:18px 4px 0">Wahisemo kwibutswa kuri Tsinda Neza.
     <a href="{html.escape(unsubscribe_url)}" style="color:#5b6576">Hagarika kwibutswa</a></p>
 </div></body></html>""",
         subtype="html",
