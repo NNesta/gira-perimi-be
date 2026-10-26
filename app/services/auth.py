@@ -1,4 +1,7 @@
+import logging
+
 import anyio
+import requests
 from google.auth import exceptions as google_exceptions
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
@@ -9,6 +12,8 @@ from app.core.config import settings
 from app.core.security import DUMMY_PASSWORD_HASH, verify_password
 from app.db.base import utcnow
 from app.models import Admin, User
+
+logger = logging.getLogger(__name__)
 
 
 class AuthError(Exception):
@@ -27,6 +32,14 @@ class GoogleUnavailable(Exception):
 GOOGLE_CLOCK_SKEW_SECONDS = 10
 
 
+def _google_transport() -> google_requests.Request:
+    """HTTP transport used to download Google's signing keys, through OUTBOUND_PROXY when one is set."""
+    session = requests.Session()
+    if settings.OUTBOUND_PROXY:
+        session.proxies.update({"http": settings.OUTBOUND_PROXY, "https": settings.OUTBOUND_PROXY})
+    return google_requests.Request(session=session)
+
+
 async def verify_google_credential(credential: str) -> dict:
     """Validates a Google Identity Services ID token (signature, audience, expiry, issuer)."""
     if not settings.GOOGLE_CLIENT_ID:
@@ -35,7 +48,7 @@ async def verify_google_credential(credential: str) -> dict:
     def _verify() -> dict:
         return id_token.verify_oauth2_token(
             credential,
-            google_requests.Request(),
+            _google_transport(),
             settings.GOOGLE_CLIENT_ID,
             clock_skew_in_seconds=GOOGLE_CLOCK_SKEW_SECONDS,
         )
@@ -43,6 +56,7 @@ async def verify_google_credential(credential: str) -> dict:
     try:
         info = await anyio.to_thread.run_sync(_verify)
     except google_exceptions.TransportError as exc:
+        logger.warning("Could not download Google's signing keys (OUTBOUND_PROXY=%r): %s", settings.OUTBOUND_PROXY, exc)
         raise GoogleUnavailable("Ntitwashoboye kuvugana na Google. Ongera ugerageze mu kanya gato.") from exc
     except (ValueError, google_exceptions.GoogleAuthError) as exc:
         raise AuthError("Google ntiyemeje uwo uri we. Ongera ugerageze.") from exc

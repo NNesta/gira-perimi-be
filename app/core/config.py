@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     USER_SESSION_DAYS: int = 30
     ADMIN_SESSION_HOURS: int = 8
     GOOGLE_CLIENT_ID: str = ""
+    # HTTP proxy for the API's own outbound calls (downloading Google's token-signing keys). Needed on hosts that only
+    # allow the internet through a proxy, e.g. PythonAnywhere free accounts: http://proxy.server:3128
+    OUTBOUND_PROXY: str = ""
     COOKIE_SECURE: bool = False
     FRONTEND_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     ADMIN_LOGIN_MAX_ATTEMPTS: int = 5

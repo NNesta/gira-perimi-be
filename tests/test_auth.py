@@ -42,16 +42,21 @@ async def test_google_rejects_bad_tokens(client):
     assert (await client.get("/api/v1/auth/me")).status_code == 401
 
 
-async def test_google_verification_uses_client_id_and_clock_skew(client, monkeypatch):
+async def test_google_verification_uses_client_id_clock_skew_and_proxy(client, monkeypatch):
     seen = {}
 
     def verify(credential, request, audience=None, clock_skew_in_seconds=0):
-        seen.update(audience=audience, skew=clock_skew_in_seconds)
+        seen.update(audience=audience, skew=clock_skew_in_seconds, proxies=dict(request.session.proxies))
         return google_claims()
 
     monkeypatch.setattr(id_token, "verify_oauth2_token", verify)
     assert (await google_sign_in(client, **google_claims())).status_code == 200
-    assert seen == {"audience": GOOGLE_CLIENT_ID, "skew": 10}
+    assert seen == {"audience": GOOGLE_CLIENT_ID, "skew": 10, "proxies": {}}
+
+    proxy = "http://proxy.server:3128"
+    monkeypatch.setattr(settings, "OUTBOUND_PROXY", proxy)
+    assert (await google_sign_in(client, **google_claims())).status_code == 200
+    assert seen["proxies"] == {"http": proxy, "https": proxy}
 
 
 async def test_google_unreachable_is_a_temporary_error(client, monkeypatch):

@@ -48,7 +48,8 @@ The browser receives a Google ID token; the API verifies its signature, audience
 allowed), requires a verified email, then creates the account on first sign-in (registration) or signs the learner in.
 Returning learners are matched by their Google account id, then by email. Name and photo come from Google.
 `POST /auth/google` answers `401` for an invalid token and `503` when Google sign-in is not configured or Google's
-signing keys cannot be fetched.
+signing keys cannot be fetched (the error log then says why). On hosts that only reach the internet through a proxy,
+set `OUTBOUND_PROXY` — on PythonAnywhere free accounts, `OUTBOUND_PROXY=http://proxy.server:3128`.
 
 ### Admin accounts
 
