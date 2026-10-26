@@ -1,0 +1,71 @@
+import uuid
+
+from fastapi import APIRouter, HTTPException, Path, Query, status
+
+from app.core.deps import DB, Content, PaidUser
+from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut
+from app.services import exams as exam_service
+
+router = APIRouter(prefix="/exams", tags=["exams"])
+
+NOT_FOUND = "Iki kizamini ntikibonetse."
+CLOSED = "Igihe cy’iki kizamini cyararangiye. Ibisubizo wari umaze gutanga byabaruwe."
+
+
+async def _load(db: DB, user: PaidUser, exam_id: uuid.UUID):
+    try:
+        return await exam_service.get_attempt(db, user, exam_id)
+    except exam_service.ExamNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND) from exc
+
+
+@router.post("", status_code=status.HTTP_201_CREATED)
+async def start_exam(db: DB, user: PaidUser, content: Content) -> ExamOut:
+    """Starts a timed 20-question mock exam, or resumes the one still running."""
+    attempt = await exam_service.start_exam(db, user, content)
+    return exam_service.to_out(attempt, content)
+
+
+@router.get("")
+async def list_exams(
+    db: DB, user: PaidUser, content: Content, limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0)
+) -> list[ExamSummaryOut]:
+    attempts = await exam_service.list_attempts(db, user, content, limit=limit, offset=offset)
+    return [exam_service.to_summary(a) for a in attempts]
+
+
+@router.get("/{exam_id}")
+async def get_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content) -> ExamOut:
+    attempt = await _load(db, user, exam_id)
+    await exam_service.finalize_expired(db, attempt, content)
+    return exam_service.to_out(attempt, content)
+
+
+@router.put("/{exam_id}/answers/{position}")
+async def save_answer(
+    exam_id: uuid.UUID,
+    body: AnswerIn,
+    db: DB,
+    user: PaidUser,
+    content: Content,
+    position: int = Path(ge=1, le=100),
+) -> AnswerSavedOut:
+    attempt = await _load(db, user, exam_id)
+    try:
+        answer = await exam_service.save_answer(db, attempt, content, position, body.selected)
+    except exam_service.ExamClosed as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, CLOSED) from exc
+    except exam_service.ExamNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, NOT_FOUND) from exc
+    return AnswerSavedOut(
+        position=answer.position,
+        selected=answer.selected,
+        answered=sum(a.selected is not None for a in attempt.answers),
+    )
+
+
+@router.post("/{exam_id}/submit")
+async def submit_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content) -> ExamOut:
+    attempt = await _load(db, user, exam_id)
+    await exam_service.submit(db, attempt, content)
+    return exam_service.to_out(attempt, content)

@@ -1,0 +1,1376 @@
+{
+ "categories": [
+  {
+   "id": "biburira",
+   "name": "Ibyapa biburira",
+   "description": "Mpandeshatu ifite umuzenguruko utukura: bikuburira ko imbere hari icyago, bigusaba kwitonda bidasanzwe.",
+   "letter": "A"
+  },
+  {
+   "id": "gutambuka-mbere",
+   "name": "Ibyapa byo gutambuka mbere",
+   "description": "Bigena uzatambuka mbere mu nkomane cyangwa mu mfunganwa.",
+   "letter": "B"
+  },
+  {
+   "id": "bibuza",
+   "name": "Ibyapa bibuza",
+   "description": "Uruziga rufite umuzenguruko utukura: bikubuza igikorwa runaka.",
+   "letter": "C"
+  },
+  {
+   "id": "bitegeka",
+   "name": "Ibyapa bitegeka",
+   "description": "Uruziga rw'ubururu: bigutegeka icyo ugomba gukora.",
+   "letter": "D"
+  },
+  {
+   "id": "biyobora",
+   "name": "Ibyapa biyobora",
+   "description": "Urukiramende rw'ubururu: biguha amakuru n'icyerekezo.",
+   "letter": "E"
+  },
+  {
+   "id": "nyongera",
+   "name": "Utwapa nyongera n'ibigoboka abagenzi",
+   "description": "Byuzuza ibindi byapa cyangwa byerekana serivisi ziri hafi.",
+   "letter": "F"
+  },
+  {
+   "id": "imirongo",
+   "name": "Ibimenyetso byo mu muhanda",
+   "description": "Imirongo n'ibishushanyo biri mu muhanda ubwawo.",
+   "letter": "M"
+  }
+ ],
+ "signs": [
+  {
+   "id": "a-1a",
+   "code": "A.1a",
+   "category": "biburira",
+   "name": "Ikoni ibumoso",
+   "description": "Ahegereye ikoni riteza ibyago riri ibumoso.",
+   "image": "a-1a.webp"
+  },
+  {
+   "id": "a-1b",
+   "code": "A.1b",
+   "category": "biburira",
+   "name": "Ikoni iburyo",
+   "description": "Ahegereye ikoni riteza ibyago riri iburyo.",
+   "image": "a-1b.webp"
+  },
+  {
+   "id": "a-1c",
+   "code": "A.1c",
+   "category": "biburira",
+   "name": "Amakoni akurikiranye, irya mbere ibumoso",
+   "description": "Amakoni abiri cyangwa uruhererekane rw'amakoni arenga abiri, irya mbere riri ibumoso.",
+   "image": "a-1c.webp"
+  },
+  {
+   "id": "a-1d",
+   "code": "A.1d",
+   "category": "biburira",
+   "name": "Amakoni akurikiranye, irya mbere iburyo",
+   "description": "Amakoni abiri cyangwa uruhererekane rw'amakoni arenga abiri, irya mbere riri iburyo.",
+   "image": "a-1d.webp"
+  },
+  {
+   "id": "a-2",
+   "code": "A.2",
+   "category": "biburira",
+   "name": "Akamanuko gashobora gutera ibyago",
+   "description": "Ahegereye akamanuko gateye ibyago. Ikigereranyo gishobora kuzuzwa n'ingano y'agacuri ku ijana (%).",
+   "image": "a-2.webp"
+  },
+  {
+   "id": "a-3",
+   "code": "A.3",
+   "category": "biburira",
+   "name": "Akazamuko gashinze cyane",
+   "description": "Ahegereye akazamuko gashinze cyane. Ikigereranyo gishobora kuzuzwa n'ingano y'agacuri ku ijana (%).",
+   "image": "a-3.webp"
+  },
+  {
+   "id": "a-4a",
+   "code": "A.4a",
+   "category": "biburira",
+   "name": "Ifungana ry'umuhanda",
+   "description": "Ahegereye aho umuhanda ufungana ku mpande zombi.",
+   "image": "a-4a.webp"
+  },
+  {
+   "id": "a-4b",
+   "code": "A.4b",
+   "category": "biburira",
+   "name": "Ifungana ry'umuhanda ibumoso",
+   "description": "Umuhanda ufungana bitewe n'akayira gasatira umuhanda ku ruhande rw'ibumoso.",
+   "image": "a-4b.webp"
+  },
+  {
+   "id": "a-4c",
+   "code": "A.4c",
+   "category": "biburira",
+   "name": "Ifungana ry'umuhanda iburyo",
+   "description": "Umuhanda ufungana bitewe n'akayira gasatira umuhanda ku ruhande rw'iburyo.",
+   "image": "a-4c.webp"
+  },
+  {
+   "id": "a-5",
+   "code": "A.5",
+   "category": "biburira",
+   "name": "Uguhinguka ku mwaro",
+   "description": "Ahegereye aho umuhanda uhingukira ku mwaro, ku nkombe cyangwa ku cyome.",
+   "image": "a-5.webp"
+  },
+  {
+   "id": "a-6",
+   "code": "A.6",
+   "category": "biburira",
+   "name": "Umuhanda utaringaniye",
+   "description": "Ahegereye ibinogo, utununga cyangwa ahantu umuhanda umeze nabi.",
+   "image": "a-6.webp"
+  },
+  {
+   "id": "a-7",
+   "code": "A.7",
+   "category": "biburira",
+   "name": "Umuhanda unyerera",
+   "description": "Ahegereye igice cy'umuhanda gishobora kunyerera.",
+   "image": "a-7.webp"
+  },
+  {
+   "id": "a-8",
+   "code": "A.8",
+   "category": "biburira",
+   "name": "Utubuye dutaruka",
+   "description": "Ahegereye igice cy'umuhanda aho utubuye dushobora gutaruka.",
+   "image": "a-8.webp"
+  },
+  {
+   "id": "a-9",
+   "code": "A.9",
+   "category": "biburira",
+   "name": "Amabuye ahanuka",
+   "description": "Ahegereye igice cy'umuhanda gishobora kugwamo amabuye ahanuka cyangwa kubamo amabuye. Ikigereranyo gishobora gucurikwa bitewe n'uruhande ibyago biturukamo.",
+   "image": "a-9.webp"
+  },
+  {
+   "id": "a-10",
+   "code": "A.10",
+   "category": "biburira",
+   "name": "Abanyamaguru",
+   "description": "Ahegereye inzira y'abanyamaguru.",
+   "image": "a-10.webp"
+  },
+  {
+   "id": "a-11",
+   "code": "A.11",
+   "category": "biburira",
+   "name": "Abana",
+   "description": "Ahegereye aho abana banyura, nko hafi y'ishuri cyangwa y'ikibuga cy'imikino.",
+   "image": "a-11.webp"
+  },
+  {
+   "id": "a-12",
+   "code": "A.12",
+   "category": "biburira",
+   "name": "Aho abanyamagare bahingukira",
+   "description": "Ahegereye aho abanyamagare binjirira mu muhanda cyangwa bawambukiranya.",
+   "image": "a-12.webp"
+  },
+  {
+   "id": "a-13",
+   "code": "A.13",
+   "category": "biburira",
+   "name": "Akayira k'amatungo",
+   "description": "Igice cy'umuhanda gishobora kwambukiranywa n'amatungo ku buryo budasanzwe.",
+   "image": "a-13.webp"
+  },
+  {
+   "id": "a-14",
+   "code": "A.14",
+   "category": "biburira",
+   "name": "Akayira k'inyamaswa",
+   "description": "Igice cy'umuhanda gishobora kwambukiranywa n'inyamaswa ku buryo budasanzwe.",
+   "image": "a-14.webp"
+  },
+  {
+   "id": "a-15",
+   "code": "A.15",
+   "category": "biburira",
+   "name": "Imirimo",
+   "description": "Ahegereye igice cy'umuhanda gikorerwamo imirimo.",
+   "image": "a-15.webp"
+  },
+  {
+   "id": "a-16",
+   "code": "A.16",
+   "category": "biburira",
+   "name": "Ibimenyetso bimurika",
+   "description": "Ahegereye aho kugendera mu muhanda bigengwa n'ibimenyetso by'amatara y'amabara atatu.",
+   "image": "a-16.webp"
+  },
+  {
+   "id": "a-17",
+   "code": "A.17",
+   "category": "biburira",
+   "name": "Ikibuga cy'indege",
+   "description": "Ahegereye aho indege zigurukira hasi hejuru y'umuhanda zigwa cyangwa zihaguruka.",
+   "image": "a-17.webp"
+  },
+  {
+   "id": "a-18",
+   "code": "A.18",
+   "category": "biburira",
+   "name": "Umuyaga w'intambike",
+   "description": "Ahegereye igice cy'umuhanda gikunze guhuhwamo n'inkubi y'umuyaga w'intambike.",
+   "image": "a-18.webp"
+  },
+  {
+   "id": "a-19",
+   "code": "A.19",
+   "category": "biburira",
+   "name": "Umuhanda ubisikanirwamo",
+   "description": "Ahegereye igice cy'umuhanda kibisikanirwamo by'agateganyo cyangwa buri gihe, kandi mbere yacyo hagendwaga mu cyerekezo kimwe.",
+   "image": "a-19.webp"
+  },
+  {
+   "id": "a-20",
+   "code": "A.20",
+   "category": "biburira",
+   "name": "Inkomane",
+   "description": "Ahegereye inkomane. Gutambuka mbere bikurikiza amategeko rusange: ureka ibinyabiziga bituruka iburyo bwawe.",
+   "image": "a-20.webp"
+  },
+  {
+   "id": "a-21a",
+   "code": "A.21a",
+   "category": "biburira",
+   "name": "Umuhanda urasukira ibumoso",
+   "description": "Inkomane aho umuhanda urasukira ibumoso mu mfuruka yenda kuba igororotse. Gutambuka mbere hakurikijwe amategeko rusange.",
+   "image": "a-21a.webp"
+  },
+  {
+   "id": "a-21b",
+   "code": "A.21b",
+   "category": "biburira",
+   "name": "Umuhanda urasukira iburyo",
+   "description": "Inkomane aho umuhanda urasukira iburyo mu mfuruka yenda kuba igororotse. Gutambuka mbere hakurikijwe amategeko rusange.",
+   "image": "a-21b.webp"
+  },
+  {
+   "id": "a-21c",
+   "code": "A.21c",
+   "category": "biburira",
+   "name": "Umuhanda urasukira ibumoso mu mfuruka ifunganye",
+   "description": "Inkomane aho umuhanda urasukira ibumoso mu mfuruka ifunganye. Gutambuka mbere hakurikijwe amategeko rusange.",
+   "image": "a-21c.webp"
+  },
+  {
+   "id": "a-21d",
+   "code": "A.21d",
+   "category": "biburira",
+   "name": "Umuhanda urasukira iburyo mu mfuruka ifunganye",
+   "description": "Inkomane aho umuhanda urasukira iburyo mu mfuruka ifunganye. Gutambuka mbere hakurikijwe amategeko rusange.",
+   "image": "a-21d.webp"
+  },
+  {
+   "id": "a-21e",
+   "code": "A.21e",
+   "category": "biburira",
+   "name": "Amasangano ameze nka T",
+   "description": "Inkomane aho umuhanda ugana ibumoso n'iburyo, ariko umuhanda urimo ntukomeze.",
+   "image": "a-21e.webp"
+  },
+  {
+   "id": "a-21f",
+   "code": "A.21f",
+   "category": "biburira",
+   "name": "Amasangano ameze nka Y",
+   "description": "Inkomane aho umuhanda usatukamo imihanda ibiri itandukanye.",
+   "image": "a-21f.webp"
+  },
+  {
+   "id": "a-21h",
+   "code": "A.21h",
+   "category": "biburira",
+   "name": "Uruhererekane rw'inkomane",
+   "description": "Inkomane zikurikiranye. Gutambuka mbere hakurikijwe amategeko rusange.",
+   "image": "a-21h.webp"
+  },
+  {
+   "id": "a-22a",
+   "code": "A.22a",
+   "category": "biburira",
+   "name": "Inkomane ku muhanda utambukwamo mbere",
+   "description": "Ahegereye inkomane aho umuhanda urimo (ugaragazwa n'umurongo munini) utambukwamo mbere y'imihanda isanganya. Ibyapa A.22a kugeza kuri A.22e bizasimburwa n'ibyapa B.3.",
+   "image": "a-22a.webp"
+  },
+  {
+   "id": "a-22b",
+   "code": "A.22b",
+   "category": "biburira",
+   "name": "Inkomane ku muhanda utambukwamo mbere",
+   "description": "Umuhanda w'ibumoso urasukira mu muhanda wawe utambukwamo mbere. Ibyapa A.22 bizasimburwa n'ibyapa B.3.",
+   "image": "a-22b.webp"
+  },
+  {
+   "id": "a-22c",
+   "code": "A.22c",
+   "category": "biburira",
+   "name": "Inkomane ku muhanda utambukwamo mbere",
+   "description": "Umuhanda w'iburyo urasukira mu muhanda wawe utambukwamo mbere. Ibyapa A.22 bizasimburwa n'ibyapa B.3.",
+   "image": "a-22c.webp"
+  },
+  {
+   "id": "a-22d",
+   "code": "A.22d",
+   "category": "biburira",
+   "name": "Inkomane ku muhanda utambukwamo mbere",
+   "description": "Umuhanda urasukira ibumoso mu mfuruka ifunganye mu muhanda wawe utambukwamo mbere. Ibyapa A.22 bizasimburwa n'ibyapa B.3.",
+   "image": "a-22d.webp"
+  },
+  {
+   "id": "a-22e",
+   "code": "A.22e",
+   "category": "biburira",
+   "name": "Inkomane ku muhanda utambukwamo mbere",
+   "description": "Umuhanda urasukira iburyo mu mfuruka ifunganye mu muhanda wawe utambukwamo mbere. Ibyapa A.22 bizasimburwa n'ibyapa B.3.",
+   "image": "a-22e.webp"
+  },
+  {
+   "id": "a-23",
+   "code": "A.23",
+   "category": "biburira",
+   "name": "Ahegereye icyapa \"Tanga inzira\"",
+   "description": "Kimenyesha mbere (urugero: muri metero 200) ko ugiye kugera ahari icyapa B.1. Kizasimburwa n'icyapa B.1.",
+   "image": "a-23.webp"
+  },
+  {
+   "id": "a-24",
+   "code": "A.24",
+   "category": "biburira",
+   "name": "Ahegereye icyapa \"STOP\"",
+   "description": "Ahegereye inkomane aho guhagarara akanya gato ari itegeko. Akapa nyongera kari munsi y'icyapa B.1 kerekana intera ibura ngo ugere ku cyapa STOP.",
+   "image": "a-24.webp"
+  },
+  {
+   "id": "a-25",
+   "code": "A.25",
+   "category": "biburira",
+   "name": "Aho banyura bazengurutse",
+   "description": "Ahegereye inkomane banyuramo bategetswe kuzenguruka (giratoire).",
+   "image": "a-25.webp"
+  },
+  {
+   "id": "a-26",
+   "code": "A.26",
+   "category": "biburira",
+   "name": "Gariyamoshi ifite bariyeri",
+   "description": "Ahegereye amasangano y'inzira nyabagendwa n'inzira ya gariyamoshi ibambiye (ifite bariyeri) hose cyangwa mu gice cyayo.",
+   "image": "a-26.webp"
+  },
+  {
+   "id": "a-27",
+   "code": "A.27",
+   "category": "biburira",
+   "name": "Gariyamoshi idafite bariyeri",
+   "description": "Ahegereye amasangano y'inzira nyabagendwa n'inzira ya gariyamoshi itabambiye (idafite bariyeri).",
+   "image": "a-27.webp"
+  },
+  {
+   "id": "a-28a",
+   "code": "A.28a",
+   "category": "biburira",
+   "name": "Gariyamoshi: hasigaye metero 150",
+   "description": "Akapa kariho imirongo itatu itukura iberamye, gashyirwa munsi ya A.26 cyangwa A.27 muri metero 150 mbere y'amasangano na gariyamoshi.",
+   "image": "a-28a.webp"
+  },
+  {
+   "id": "a-28b",
+   "code": "A.28b",
+   "category": "biburira",
+   "name": "Gariyamoshi: hasigaye metero 100",
+   "description": "Akapa kariho imirongo ibiri itukura iberamye, gashyirwa muri metero 100 mbere y'amasangano na gariyamoshi.",
+   "image": "a-28b.webp"
+  },
+  {
+   "id": "a-28c",
+   "code": "A.28c",
+   "category": "biburira",
+   "name": "Gariyamoshi: hasigaye metero 50",
+   "description": "Akapa kariho umurongo umwe utukura uberamye, gashyirwa muri metero 50 mbere y'amasangano na gariyamoshi.",
+   "image": "a-28c.webp"
+  },
+  {
+   "id": "a-29",
+   "code": "A.29",
+   "category": "biburira",
+   "name": "Ibyago",
+   "description": "Ahegereye icyago kidasobanuye ukundi.",
+   "image": "a-29.webp"
+  },
+  {
+   "id": "a-30",
+   "code": "A.30",
+   "category": "biburira",
+   "name": "Imitemeri y'icyago",
+   "description": "Imitemeri ifite amabara atukura n'ayera asimburana: yerekana icyago kidahoraho, nk'impanuka cyangwa imirimo ikorwa mu muhanda, n'aho bayobereza umuhanda.",
+   "image": "a-30.webp"
+  },
+  {
+   "id": "a-31",
+   "code": "A.31",
+   "category": "biburira",
+   "name": "Ibitembo by'icyago",
+   "description": "Ibitembo bifite amabara atukura n'ayera asimburana: byerekana icyago kidahoraho kandi bikayobora abagenzi.",
+   "image": "a-31.webp"
+  },
+  {
+   "id": "b-1",
+   "code": "B.1",
+   "category": "gutambuka-mbere",
+   "name": "Tanga inzira",
+   "description": "Gitegeka umuyobozi ugeze ku nkomane guha inzira ibinyabiziga bigenda mu muhanda yegera, ibiturutse iburyo n'ibiturutse ibumoso.",
+   "image": "b-1.webp"
+  },
+  {
+   "id": "b-2a",
+   "code": "B.2a",
+   "category": "gutambuka-mbere",
+   "name": "Hagarara (STOP)",
+   "description": "Gitegeka umuyobozi ugeze ku nkomane guhagarara akanya gato mbere yo kwinjira mu nkomane, no guha inzira ibinyabiziga bigenda mu muhanda yegera.",
+   "image": "b-2a.webp"
+  },
+  {
+   "id": "b-2b",
+   "code": "B.2b",
+   "category": "gutambuka-mbere",
+   "name": "Hagarara (STOP), icyapa cya kera",
+   "description": "Gisobanura kimwe n'icyapa B.2a. Ibyapa B.2b bizasimburwa buhoro buhoro n'ibyapa B.2a.",
+   "image": "b-2b.webp"
+  },
+  {
+   "id": "b-3",
+   "code": "B.3",
+   "category": "gutambuka-mbere",
+   "name": "Umuhanda utambukwamo mbere",
+   "description": "Kibwira abagenda muri uyu muhanda ko mu nkomane zawo n'indi mihanda, abaturuka mu yindi mihanda bagomba kubaha inzira.",
+   "image": "b-3.webp"
+  },
+  {
+   "id": "b-4",
+   "code": "B.4",
+   "category": "gutambuka-mbere",
+   "name": "Iherezo ry'umuhanda utambukwamo mbere",
+   "description": "Kerekana aho uwo muhanda urekera gutambukwamo mbere y'iyindi.",
+   "image": "b-4.webp"
+  },
+  {
+   "id": "b-5",
+   "code": "B.5",
+   "category": "gutambuka-mbere",
+   "name": "Tanga inzira ku biturutse imbere",
+   "description": "Birabujijwe kwinjira mu muhanda ufunganye aho kubisikana biruhije cyangwa bidashoboka, igihe ikinyabiziga kimwe cyangwa byinshi biturutse imbere bihagarara.",
+   "image": "b-5.webp"
+  },
+  {
+   "id": "b-6",
+   "code": "B.6",
+   "category": "gutambuka-mbere",
+   "name": "Utambuka mbere y'ibiturutse imbere",
+   "description": "Kereka umuyobozi ugiye kwinjira mu mfunganwa ko afite uburenganzira bwo gutambuka mbere y'ibinyabiziga biturutse imbere. Icyitonderwa: iyo ikizamuka n'ikimanuka bihuye, ikimanuka ni cyo gitanga inzira.",
+   "image": "b-6.webp"
+  },
+  {
+   "id": "b-7a",
+   "code": "B.7a",
+   "category": "gutambuka-mbere",
+   "name": "Inkomane na gariyamoshi",
+   "description": "Kerekana inkomane y'umuhanda n'inzira ya gariyamoshi.",
+   "image": "b-7a.webp"
+  },
+  {
+   "id": "b-7b",
+   "code": "B.7b",
+   "category": "gutambuka-mbere",
+   "name": "Inkomane na gariyamoshi y'amashami abiri",
+   "description": "Kerekana ko inzira ya gariyamoshi ihura n'umuhanda ifite nibura amashami abiri.",
+   "image": "b-7b.webp"
+  },
+  {
+   "id": "c-1",
+   "code": "C.1",
+   "category": "bibuza",
+   "name": "Ntihanyurwa muri iki cyerekezo",
+   "description": "Nta kinyabiziga kihanyura mu cyerekezo uganamo.",
+   "image": "c-1.webp"
+  },
+  {
+   "id": "c-2a",
+   "code": "C.2a",
+   "category": "bibuza",
+   "name": "Ntihanyurwa mu byerekezo byombi",
+   "description": "Habujijwe kunyurwa n'ikinyabiziga icyo ari cyo cyose, mu byerekezo byombi.",
+   "image": "c-2a.webp"
+  },
+  {
+   "id": "c-2b",
+   "code": "C.2b",
+   "category": "bibuza",
+   "name": "Ntihanyurwa uretse abahatuye",
+   "description": "Nta kinyabiziga kihanyura uretse iby'abahatuye n'ibigomba guhagarara mu gice cy'inzira giherwa n'iki kimenyetso.",
+   "image": "c-2b.webp"
+  },
+  {
+   "id": "c-3a",
+   "code": "C.3a",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'ibinyabiziga bifite moteri",
+   "description": "Ntihanyurwa n'ikinyabiziga icyo ari cyo cyose gifite moteri, uretse amapikipiki adafite akanyabiziga ko ku ruhande na velomoteri.",
+   "image": "c-3a.webp"
+  },
+  {
+   "id": "c-3b",
+   "code": "C.3b",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'amapikipiki",
+   "description": "Birabujijwe kuhanyuza ipikipiki.",
+   "image": "c-3b.webp"
+  },
+  {
+   "id": "c-3c",
+   "code": "C.3c",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'amagare",
+   "description": "Ntihanyurwa n'ibinyamitende (amagare).",
+   "image": "c-3c.webp"
+  },
+  {
+   "id": "c-3d",
+   "code": "C.3d",
+   "category": "bibuza",
+   "name": "Ntihanyurwa na velomoteri",
+   "description": "Birabujijwe kuhanyuza velomoteri.",
+   "image": "c-3d.webp"
+  },
+  {
+   "id": "c-3e",
+   "code": "C.3e",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'ibitwara ibicuruzwa",
+   "description": "Ntihanyurwa n'ibinyabiziga bigenewe gutwara ibicuruzwa. Akapa nyongera gashobora kwerekana uburemere baheraho babuza.",
+   "image": "c-3e.webp"
+  },
+  {
+   "id": "c-3f",
+   "code": "C.3f",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'ibikurura romoruki",
+   "description": "Ntihanyurwa n'ikinyabiziga icyo ari cyo cyose gikurura romoruki itari makuzungu cyangwa romoruki ifite umutambiko umwe.",
+   "image": "c-3f.webp"
+  },
+  {
+   "id": "c-3g",
+   "code": "C.3g",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'abanyamaguru",
+   "description": "Birabujijwe ko abanyamaguru bahanyura.",
+   "image": "c-3g.webp"
+  },
+  {
+   "id": "c-3h",
+   "code": "C.3h",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'ibikururwa n'inyamaswa",
+   "description": "Ntihanyurwa n'ibinyabiziga bikururwa n'inyamaswa.",
+   "image": "c-3h.webp"
+  },
+  {
+   "id": "c-3i",
+   "code": "C.3i",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'utunyamitwaro dusunikwa",
+   "description": "Ntihanyurwa n'utunyamitwaro dusunikwa (ingorofani n'ibindi).",
+   "image": "c-3i.webp"
+  },
+  {
+   "id": "c-3j",
+   "code": "C.3j",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'imashini zihinga",
+   "description": "Ntihanyurwa n'ibinyabiziga bihinga bifite moteri.",
+   "image": "c-3j.webp"
+  },
+  {
+   "id": "c-4a",
+   "code": "C.4a",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'amoko yerekanwe",
+   "description": "Ntihanyurwa n'amoko y'ibinyabiziga cyangwa abagenzi bashushanyijwe ku cyapa (urugero: imodoka n'ipikipiki).",
+   "image": "c-4a.webp"
+  },
+  {
+   "id": "c-4b",
+   "code": "C.4b",
+   "category": "bibuza",
+   "name": "Ntihanyurwa n'amoko yerekanwe",
+   "description": "Ntihanyurwa n'amoko y'ibinyabiziga cyangwa abagenzi bashushanyijwe ku cyapa (urugero: ibikururwa n'inyamaswa).",
+   "image": "c-4b.webp"
+  },
+  {
+   "id": "c-5",
+   "code": "C.5",
+   "category": "bibuza",
+   "name": "Ubugari ntarengwa",
+   "description": "Ntihanyurwa n'ibinyabiziga bifite ubugari burenze ubwerekanwa ku cyapa (muri metero).",
+   "image": "c-5.webp"
+  },
+  {
+   "id": "c-6",
+   "code": "C.6",
+   "category": "bibuza",
+   "name": "Ubuhagarike ntarengwa",
+   "description": "Ntihanyurwa n'ibinyabiziga bifite ubuhagarike, habariwemo imizigo, burenze ubwerekanwa ku cyapa (muri metero).",
+   "image": "c-6.webp"
+  },
+  {
+   "id": "c-7",
+   "code": "C.7",
+   "category": "bibuza",
+   "name": "Uburemere ntarengwa",
+   "description": "Ntihanyurwa n'ibinyabiziga bifite uburemere burenze ubwerekanwa ku cyapa (muri toni).",
+   "image": "c-7.webp"
+  },
+  {
+   "id": "c-8",
+   "code": "C.8",
+   "category": "bibuza",
+   "name": "Uburemere ntarengwa ku mutambiko",
+   "description": "Ntihanyurwa n'ibinyabiziga bifite uburemere ku mutambiko burenze ubwerekanwa ku cyapa (muri toni).",
+   "image": "c-8.webp"
+  },
+  {
+   "id": "c-9",
+   "code": "C.9",
+   "category": "bibuza",
+   "name": "Uburebure ntarengwa",
+   "description": "Ntihanyurwa n'ibinyabiziga cyangwa ibinyabiziga bikomatanye bifite uburebure, habariwemo imizigo, burenze ubwerekanwa ku cyapa (muri metero).",
+   "image": "c-9.webp"
+  },
+  {
+   "id": "c-10",
+   "code": "C.10",
+   "category": "bibuza",
+   "name": "Intera ntarengwa hagati y'ibinyabiziga",
+   "description": "Birabujijwe kugenda udasize hagati yawe n'ikinyabiziga kikuri imbere intera nibura ingana n'iyerekanwe ku cyapa (muri metero).",
+   "image": "c-10.webp"
+  },
+  {
+   "id": "c-11a",
+   "code": "C.11a",
+   "category": "bibuza",
+   "name": "Birabujijwe gukatira ibumoso",
+   "description": "Birabujijwe gukata mu cyerekezo cyerekanwa n'akarangacyerekezo (ibumoso).",
+   "image": "c-11a.webp"
+  },
+  {
+   "id": "c-11b",
+   "code": "C.11b",
+   "category": "bibuza",
+   "name": "Birabujijwe gukatira iburyo",
+   "description": "Birabujijwe gukata mu cyerekezo cyerekanwa n'akarangacyerekezo (iburyo).",
+   "image": "c-11b.webp"
+  },
+  {
+   "id": "c-12",
+   "code": "C.12",
+   "category": "bibuza",
+   "name": "Birabujijwe guhindukira",
+   "description": "Birabujijwe guhindukira ugasubira inyuma (demi-tour).",
+   "image": "c-12.webp"
+  },
+  {
+   "id": "c-13a",
+   "code": "C.13a",
+   "category": "bibuza",
+   "name": "Birabujijwe kunyuranaho",
+   "description": "Birabujijwe kunyura ku binyabiziga byose, uretse ibinyamitende.",
+   "image": "c-13a.webp"
+  },
+  {
+   "id": "c-13b",
+   "code": "C.13b",
+   "category": "bibuza",
+   "name": "Amakamyo abujijwe kunyuranaho",
+   "description": "Kubuza kunyuranaho ku binyabiziga bitwara ibicuruzwa bifite uburemere ntarengwa burenga toni 3,5. Akapa nyongera gashobora kwerekana ubundi buremere.",
+   "image": "c-13b.webp"
+  },
+  {
+   "id": "c-14",
+   "code": "C.14",
+   "category": "bibuza",
+   "name": "Umuvuduko ntarengwa",
+   "description": "Umuvuduko ntugomba kurenga uwerekanwa ku cyapa (mu birometero ku isaha).",
+   "image": "c-14.webp"
+  },
+  {
+   "id": "c-15",
+   "code": "C.15",
+   "category": "bibuza",
+   "name": "Birabujijwe kuvuza amahoni",
+   "description": "Birabujijwe kuvuza ihoni, keretse iyo ari ukwirinda impanuka.",
+   "image": "c-15.webp"
+  },
+  {
+   "id": "c-16",
+   "code": "C.16",
+   "category": "bibuza",
+   "name": "Hagarara kuri gasutamo",
+   "description": "Birabujijwe gutambuka udahagaze akanya gato, kubera gasutamo cyangwa indi mpamvu yanditse ku cyapa.",
+   "image": "c-16.webp"
+  },
+  {
+   "id": "c-17a",
+   "code": "C.17a",
+   "category": "bibuza",
+   "name": "Iherezo ry'ibibuzwa byose",
+   "description": "Kerekana ko ibibuzwa byose byari byerekanywe n'ibyapa ku binyabiziga bigenda bitagikurikizwa.",
+   "image": "c-17a.webp"
+  },
+  {
+   "id": "c-17b",
+   "code": "C.17b",
+   "category": "bibuza",
+   "name": "Iherezo ry'umuvuduko ntarengwa",
+   "description": "Kerekana ko umuvuduko ntarengwa werekanywe n'icyapa C.14 utagikurikizwa.",
+   "image": "c-17b.webp"
+  },
+  {
+   "id": "c-17c",
+   "code": "C.17c",
+   "category": "bibuza",
+   "name": "Iherezo ryo kubuza kunyuranaho",
+   "description": "Kerekana ko kubuza kunyuranaho kwerekanywe n'icyapa C.13a (cyangwa C.13b) bitagikurikizwa.",
+   "image": "c-17c.webp"
+  },
+  {
+   "id": "c-18",
+   "code": "C.18",
+   "category": "bibuza",
+   "name": "Birabujijwe guhagarara umwanya munini",
+   "description": "Kerekana aho ikinyabiziga gitangira kubuzwa guhagarara umwanya munini.",
+   "image": "c-18.webp"
+  },
+  {
+   "id": "c-19",
+   "code": "C.19",
+   "category": "bibuza",
+   "name": "Birabujijwe guhagarara umwanya muto n'umunini",
+   "description": "Kerekana aho ikinyabiziga gitangira kubuzwa guhagarara umwanya muto ndetse n'umwanya munini.",
+   "image": "c-19.webp"
+  },
+  {
+   "id": "c-20a",
+   "code": "C.20a",
+   "category": "bibuza",
+   "name": "Guhagarara bisimburana: iminsi 1-15",
+   "description": "Birabujijwe guhagarara umwanya munini ku ruhande iki cyapa kiriho mu minsi 15 ya mbere y'ukwezi.",
+   "image": "c-20a.webp"
+  },
+  {
+   "id": "c-20b",
+   "code": "C.20b",
+   "category": "bibuza",
+   "name": "Guhagarara bisimburana: iminsi 16-31",
+   "description": "Birabujijwe guhagarara umwanya munini ku ruhande iki cyapa kiriho kuva ku munsi wa 16 kugeza ku munsi wa nyuma w'ukwezi.",
+   "image": "c-20b.webp"
+  },
+  {
+   "id": "d-1a-1",
+   "code": "D.1a",
+   "category": "bitegeka",
+   "name": "Icyerekezo gitegetswe: ibumoso",
+   "description": "Gitegeka buri kinyabiziga gukurikiza icyerekezo cyerekanwa n'akarangacyerekezo.",
+   "image": "d-1a-1.webp"
+  },
+  {
+   "id": "d-1a-2",
+   "code": "D.1a",
+   "category": "bitegeka",
+   "name": "Icyerekezo gitegetswe: kata iburyo",
+   "description": "Gitegeka buri kinyabiziga gukatira iburyo nk'uko akarangacyerekezo kabyerekana.",
+   "image": "d-1a-2.webp"
+  },
+  {
+   "id": "d-1a-3",
+   "code": "D.1a",
+   "category": "bitegeka",
+   "name": "Komeza imbere cyangwa ukatire iburyo",
+   "description": "Gitegeka kunyura muri kimwe mu byerekezo byerekanwa n'uturangacyerekezo.",
+   "image": "d-1a-3.webp"
+  },
+  {
+   "id": "d-1a-4",
+   "code": "D.1a",
+   "category": "bitegeka",
+   "name": "Komeza imbere",
+   "description": "Gitegeka buri kinyabiziga gukomeza imbere.",
+   "image": "d-1a-4.webp"
+  },
+  {
+   "id": "d-1b",
+   "code": "D.1b",
+   "category": "bitegeka",
+   "name": "Icyerekezo gitegetswe (impande zombi)",
+   "description": "Bisobanura kimwe na D.1a. Kerekana ko ibinyabiziga bishobora kunyura hirya no hino y'inkomyi iri mu nzira nyabagendwa.",
+   "image": "d-1b.webp"
+  },
+  {
+   "id": "d-1c",
+   "code": "D.1c",
+   "category": "bitegeka",
+   "name": "Uguhigama",
+   "description": "Mu nzira ifunganye, kerekana igice cyagutse aho ikinyabiziga gihagarara kugira ngo giheze umwanya ibinyabiziga biturutse imbere.",
+   "image": "d-1c.webp"
+  },
+  {
+   "id": "d-2",
+   "code": "D.2",
+   "category": "bitegeka",
+   "name": "Ugukikira bitegetswe",
+   "description": "Gishyirwa ku buhungiro cyangwa imbere y'inkomyi: gitegeka kunyura mu ruhande rwerekanwa n'akarangacyerekezo.",
+   "image": "d-2.webp"
+  },
+  {
+   "id": "d-3",
+   "code": "D.3",
+   "category": "bitegeka",
+   "name": "Inkomane banyuramo bazengurutse",
+   "description": "Gitegeka buri kinyabiziga gukurikiza amategeko agenga inkomane banyuramo bazengurutse.",
+   "image": "d-3.webp"
+  },
+  {
+   "id": "d-4",
+   "code": "D.4",
+   "category": "bitegeka",
+   "name": "Inzira y'amagare itegetswe",
+   "description": "Gitegeka abatwara amagare na velomoteri kunyura muri iyo nzira. Ibindi binyabiziga ntibiyitira.",
+   "image": "d-4.webp"
+  },
+  {
+   "id": "d-5",
+   "code": "D.5",
+   "category": "bitegeka",
+   "name": "Inzira y'abanyamaguru itegetswe",
+   "description": "Gitegeka abanyamaguru kunyura muri iyo nzira, kikabuza abandi bagenzi kuyinyuramo.",
+   "image": "d-5.webp"
+  },
+  {
+   "id": "d-6",
+   "code": "D.6",
+   "category": "bitegeka",
+   "name": "Inzira y'abagendera ku mafarasi",
+   "description": "Kimenyesha abagendera ku mafarasi ko bagomba kunyura muri iyo nzira, kikabuza abandi kuyinyuramo.",
+   "image": "d-6.webp"
+  },
+  {
+   "id": "d-7",
+   "code": "D.7",
+   "category": "bitegeka",
+   "name": "Inzira y'amatungo itegetswe",
+   "description": "Kimenyesha abayobozi b'amatungo ko bagomba kuyanyuza muri iyo nzira.",
+   "image": "d-7.webp"
+  },
+  {
+   "id": "d-8",
+   "code": "D.8",
+   "category": "bitegeka",
+   "name": "Umuvuduko muto ntarengwa",
+   "description": "Ibinyabiziga biri muri iyo nzira bigomba kugira nibura umuvuduko werekanwe (mu birometero ku isaha).",
+   "image": "d-8.webp"
+  },
+  {
+   "id": "d-9",
+   "code": "D.9",
+   "category": "bitegeka",
+   "name": "Iherezo ry'umuvuduko muto ntarengwa",
+   "description": "Kerekana aho umuvuduko muto wari utegetswe n'icyapa D.8 utagitegetswe.",
+   "image": "d-9.webp"
+  },
+  {
+   "id": "e-1a",
+   "code": "E.1a",
+   "category": "biyobora",
+   "name": "Kumenyesha mbere icyerekezo",
+   "description": "Urugero rw'icyapa kimenyesha abagenzi ibyerekezo biri mu masangano begereye.",
+   "image": "e-1a.webp"
+  },
+  {
+   "id": "e-1b",
+   "code": "E.1b",
+   "category": "biyobora",
+   "name": "Kumenyesha mbere icyerekezo",
+   "description": "Urugero rw'icyapa kimenyesha ibyerekezo by'amasangano ameze nka Y.",
+   "image": "e-1b.webp"
+  },
+  {
+   "id": "e-1c",
+   "code": "E.1c",
+   "category": "biyobora",
+   "name": "Kumenyesha mbere icyerekezo",
+   "description": "Urugero rw'icyapa kimenyesha ibyerekezo n'intera bijyayo.",
+   "image": "e-1c.webp"
+  },
+  {
+   "id": "e-2a",
+   "code": "E.2a",
+   "category": "biyobora",
+   "name": "Umuhanda udakomeza",
+   "description": "Urugero rw'icyapa kimenyesha mbere ko umuhanda wo ku ruhande udakomeza.",
+   "image": "e-2a.webp"
+  },
+  {
+   "id": "e-2b",
+   "code": "E.2b",
+   "category": "biyobora",
+   "name": "Umuhanda udakomeza",
+   "description": "Urugero rw'icyapa kimenyesha mbere ko umuhanda udakomeza.",
+   "image": "e-2b.webp"
+  },
+  {
+   "id": "e-3",
+   "code": "E.3",
+   "category": "biyobora",
+   "name": "Inzira igomba kunyurwamo",
+   "description": "Kimenyesha mbere inzira yo kunyuramo ngo ufate icyerekezo cy'ibumoso, igihe gukatira ibumoso bibujijwe mu nkomane ikurikira.",
+   "image": "e-3.webp"
+  },
+  {
+   "id": "e-4",
+   "code": "E.4",
+   "category": "biyobora",
+   "name": "Igisate cyo gufata",
+   "description": "Kimenyesha mbere igisate cy'umuhanda ugomba gufata bitewe n'icyerekezo ushaka gufata mu nkomane.",
+   "image": "e-4.webp"
+  },
+  {
+   "id": "e-5a",
+   "code": "E.5a",
+   "category": "biyobora",
+   "name": "Icyerekezo cy'ahantu",
+   "description": "Urugero rw'icyapa kiranga icyerekezo n'intera bijya ahantu runaka.",
+   "image": "e-5a.webp"
+  },
+  {
+   "id": "e-5b",
+   "code": "E.5b",
+   "category": "biyobora",
+   "name": "Icyerekezo cy'ahantu",
+   "description": "Urugero rw'icyapa kiranga ibyerekezo bijya mu turere dutandukanye.",
+   "image": "e-5b.webp"
+  },
+  {
+   "id": "e-5c",
+   "code": "E.5c",
+   "category": "biyobora",
+   "name": "Kuyobya umuhanda (DEVIATION)",
+   "description": "Kerekana icyerekezo cyo gukurikira igihe inzira yahinduwe kubera imirimo.",
+   "image": "e-5c.webp"
+  },
+  {
+   "id": "e-6",
+   "code": "E.6",
+   "category": "biyobora",
+   "name": "Ikibuga cy'indege",
+   "description": "Kerekana icyerekezo cy'ikibuga cy'indege.",
+   "image": "e-6.webp"
+  },
+  {
+   "id": "e-7",
+   "code": "E.7",
+   "category": "biyobora",
+   "name": "Ikibanza cy'ingando",
+   "description": "Kerekana aho ikibanza cy'ingando giherereye.",
+   "image": "e-7.webp"
+  },
+  {
+   "id": "e-8",
+   "code": "E.8",
+   "category": "biyobora",
+   "name": "Icumbi ry'urubyiruko",
+   "description": "Kerekana aho icumbi ry'urubyiruko riherereye.",
+   "image": "e-8.webp"
+  },
+  {
+   "id": "e-9",
+   "code": "E.9",
+   "category": "biyobora",
+   "name": "Kwinjira mu nsisiro",
+   "description": "Kimenyesha ko winjiye mu nsisiro (umudugudu cyangwa umujyi). Amategeko yo mu nsisiro, nk'umuvuduko ntarengwa, atangira gukurikizwa.",
+   "image": "e-9.webp"
+  },
+  {
+   "id": "e-10",
+   "code": "E.10",
+   "category": "biyobora",
+   "name": "Iherezo ry'insisiro",
+   "description": "Kerekana iherezo ry'insisiro (umudugudu cyangwa umujyi).",
+   "image": "e-10.webp"
+  },
+  {
+   "id": "e-11",
+   "code": "E.11",
+   "category": "biyobora",
+   "name": "Inzira y'abanyamaguru",
+   "description": "Kereka abanyamaguru n'abayobozi aho inzira y'abanyamaguru iri.",
+   "image": "e-11.webp"
+  },
+  {
+   "id": "e-12",
+   "code": "E.12",
+   "category": "biyobora",
+   "name": "Ibitaro",
+   "description": "Gisaba abayobozi kwitonda hafi y'amavuriro, cyane cyane birinda urusaku rw'amahoni n'urwa moteri.",
+   "image": "e-12.webp"
+  },
+  {
+   "id": "e-13a",
+   "code": "E.13a",
+   "category": "biyobora",
+   "name": "Icyerekezo kimwe",
+   "description": "Iyo giteye nyanguni ku murongo ugabanya umuhanda mo kabiri, cyemeza ko uri mu nzira y'icyerekezo kimwe.",
+   "image": "e-13a.webp"
+  },
+  {
+   "id": "e-13b",
+   "code": "E.13b",
+   "category": "biyobora",
+   "name": "Icyerekezo kimwe",
+   "description": "Iyo giteye kibangikanye n'umuhanda, cyemeza ko umuhanda ugana mu cyerekezo cy'akarangacyerekezo ari uw'icyerekezo kimwe.",
+   "image": "e-13b.webp"
+  },
+  {
+   "id": "e-14",
+   "code": "E.14",
+   "category": "biyobora",
+   "name": "Inzira idakomeza",
+   "description": "Kerekana ko inzira giteyeho idakomeza (impera y'inzira).",
+   "image": "e-14.webp"
+  },
+  {
+   "id": "e-15",
+   "code": "E.15",
+   "category": "biyobora",
+   "name": "Umuhanda urombereje w'ibice byinshi",
+   "description": "Kerekana aho amategeko yo kugendera mu muhanda urombereje w'ibisate byinshi (autoroute) atangirira gukurikizwa.",
+   "image": "e-15.webp"
+  },
+  {
+   "id": "e-16",
+   "code": "E.16",
+   "category": "biyobora",
+   "name": "Iherezo ry'umuhanda urombereje",
+   "description": "Kerekana aho amategeko yihariye y'umuhanda urombereje w'ibisate byinshi atagikurikizwa.",
+   "image": "e-16.webp"
+  },
+  {
+   "id": "e-17",
+   "code": "E.17",
+   "category": "biyobora",
+   "name": "Umuhanda ugenewe imodoka",
+   "description": "Kerekana aho amategeko yihariye y'umuhanda ugenewe imodoka atangirira; ntiwunyurwamo n'abanyamaguru cyangwa amatungo.",
+   "image": "e-17.webp"
+  },
+  {
+   "id": "e-18",
+   "code": "E.18",
+   "category": "biyobora",
+   "name": "Iherezo ry'umuhanda ugenewe imodoka",
+   "description": "Kerekana aho amategeko y'icyapa E.17 atagikurikizwa.",
+   "image": "e-18.webp"
+  },
+  {
+   "id": "e-19",
+   "code": "E.19",
+   "category": "biyobora",
+   "name": "Aho bisi zihagarara",
+   "description": "Kerekana ahagenewe guhagararwamo n'imodoka nini zitwara abantu muri rusange.",
+   "image": "e-19.webp"
+  },
+  {
+   "id": "e-20",
+   "code": "E.20",
+   "category": "biyobora",
+   "name": "Parikingi",
+   "description": "Kerekana ahantu hagenewe guhagararamo umwanya munini.",
+   "image": "e-20.webp"
+  },
+  {
+   "id": "e-21",
+   "code": "E.21",
+   "category": "biyobora",
+   "name": "Amabwiriza yihariye",
+   "description": "Kerekana ko hari amabwiriza yihariye yo kugendera mu cyambu cyangwa ku kibuga cy'indege.",
+   "image": "e-21.webp"
+  },
+  {
+   "id": "f-1",
+   "code": "F.1",
+   "category": "nyongera",
+   "name": "Intera",
+   "description": "Akapa kerekana intera iri hagati y'icyapa n'aho icyago gitangirira cyangwa aho amabwiriza y'icyapa atangira gukurikizwa.",
+   "image": "f-1.webp"
+  },
+  {
+   "id": "f-2",
+   "code": "F.2",
+   "category": "nyongera",
+   "name": "Uburebure bw'igice",
+   "description": "Akapa kerekana uburebure bw'igice giteza ibyago cyangwa bw'ahantu amabwiriza y'icyapa akurikizwa.",
+   "image": "f-2.webp"
+  },
+  {
+   "id": "f-3a",
+   "code": "F.3a",
+   "category": "nyongera",
+   "name": "Intera yo kubuza (imbere)",
+   "description": "Iyo gashyizwe kateganye n'umurongo ugabanya umuhanda mo kabiri, kerekana ahantu habujijwe guhagarara, hakurikijwe icyerekezo cy'akarangacyerekezo.",
+   "image": "f-3a.webp"
+  },
+  {
+   "id": "f-3b",
+   "code": "F.3b",
+   "category": "nyongera",
+   "name": "Intera yo kubuza (impande zombi)",
+   "description": "Kerekana ko ibibujijwe bireba impande zombi z'icyapa ku ntera yerekanwe.",
+   "image": "f-3b.webp"
+  },
+  {
+   "id": "f-3c",
+   "code": "F.3c",
+   "category": "nyongera",
+   "name": "Intera yo kubuza (inyuma)",
+   "description": "Kerekana intera ibibujijwe bireba, ku ruhande rwerekanwa n'akarangacyerekezo.",
+   "image": "f-3c.webp"
+  },
+  {
+   "id": "f-4a",
+   "code": "F.4a",
+   "category": "nyongera",
+   "name": "Ibibuzwa bireba imbere",
+   "description": "Akapa kareba igice cy'umuhanda kiri hirya y'ikimenyetso.",
+   "image": "f-4a.webp"
+  },
+  {
+   "id": "f-4b",
+   "code": "F.4b",
+   "category": "nyongera",
+   "name": "Ibibuzwa bireba impande zombi",
+   "description": "Akapa kareba ibice by'umuhanda biri hirya no hino y'ikimenyetso.",
+   "image": "f-4b.webp"
+  },
+  {
+   "id": "f-4c",
+   "code": "F.4c",
+   "category": "nyongera",
+   "name": "Ibibuzwa bireba inyuma",
+   "description": "Akapa kareba igice cy'umuhanda kiri hino y'ikimenyetso.",
+   "image": "f-4c.webp"
+  },
+  {
+   "id": "f-5",
+   "code": "F.5",
+   "category": "nyongera",
+   "name": "Ikintu ngoboka",
+   "description": "Kerekana ikintu ngoboka gishushanyije ku buso bwera bw'icyapa. Ibyapa F.6 kugeza kuri F.18 ni ingero zacyo.",
+   "image": "f-5.webp"
+  },
+  {
+   "id": "f-6",
+   "code": "F.6",
+   "category": "nyongera",
+   "name": "Ahari ubutabazi",
+   "description": "Kerekana ahari ubutabazi bw'ibanze.",
+   "image": "f-6.webp"
+  },
+  {
+   "id": "f-7",
+   "code": "F.7",
+   "category": "nyongera",
+   "name": "Aho bagobokera ibinyabiziga",
+   "description": "Kerekana aho bakorera cyangwa bagobokera ibinyabiziga (garaje).",
+   "image": "f-7.webp"
+  },
+  {
+   "id": "f-8",
+   "code": "F.8",
+   "category": "nyongera",
+   "name": "Ahari telefone",
+   "description": "Kerekana ahari telefone.",
+   "image": "f-8.webp"
+  },
+  {
+   "id": "f-9",
+   "code": "F.9",
+   "category": "nyongera",
+   "name": "Ahari lisansi na mazutu",
+   "description": "Kerekana sitasiyo y'ibikomoka kuri peteroli.",
+   "image": "f-9.webp"
+  },
+  {
+   "id": "f-10",
+   "code": "F.10",
+   "category": "nyongera",
+   "name": "Hoteli cyangwa icumbi",
+   "description": "Kerekana hoteli cyangwa ahari icumbi ry'abagenzi.",
+   "image": "f-10.webp"
+  },
+  {
+   "id": "f-11",
+   "code": "F.11",
+   "category": "nyongera",
+   "name": "Aho bafatira ifunguro",
+   "description": "Kerekana resitora cyangwa aho bafatira ifunguro.",
+   "image": "f-11.webp"
+  },
+  {
+   "id": "f-12",
+   "code": "F.12",
+   "category": "nyongera",
+   "name": "Urunywero cyangwa urusamuriro",
+   "description": "Kerekana aho banywera cyangwa basamurira.",
+   "image": "f-12.webp"
+  },
+  {
+   "id": "f-13",
+   "code": "F.13",
+   "category": "nyongera",
+   "name": "Ahateganyirijwe abahisi",
+   "description": "Kerekana ahateganyirijwe kuruhukira no gufatira amafunguro abahisi.",
+   "image": "f-13.webp"
+  },
+  {
+   "id": "f-14",
+   "code": "F.14",
+   "category": "nyongera",
+   "name": "Aho bahagurukira batembera n'amaguru",
+   "description": "Kerekana aho urugendo rwo gutembera n'amaguru rutangirira.",
+   "image": "f-14.webp"
+  },
+  {
+   "id": "f-15",
+   "code": "F.15",
+   "category": "nyongera",
+   "name": "Ikibanza cy'ingando",
+   "description": "Kerekana ikibanza cy'ingando.",
+   "image": "f-15.webp"
+  },
+  {
+   "id": "f-16",
+   "code": "F.16",
+   "category": "nyongera",
+   "name": "Ikibanza cya karavani",
+   "description": "Kerekana ikibanza cyagenewe amazu yimukanwa akururwa n'imodoka (karavani).",
+   "image": "f-16.webp"
+  },
+  {
+   "id": "f-17",
+   "code": "F.17",
+   "category": "nyongera",
+   "name": "Ikibanza cy'ingando na karavani",
+   "description": "Kerekana ikibanza cy'ingando cyakira n'amazu yimukanwa.",
+   "image": "f-17.webp"
+  },
+  {
+   "id": "f-18",
+   "code": "F.18",
+   "category": "nyongera",
+   "name": "Icumbi ry'urubyiruko",
+   "description": "Kerekana icumbi ry'urubyiruko.",
+   "image": "f-18.webp"
+  },
+  {
+   "id": "m-1",
+   "code": "M.1",
+   "category": "imirongo",
+   "name": "Umurongo wera udacagaguye",
+   "description": "Umuyobozi wese abujijwe kuwurenga (ingingo ya 110).",
+   "image": "m-1.webp"
+  },
+  {
+   "id": "m-2",
+   "code": "M.2",
+   "category": "imirongo",
+   "name": "Umurongo wera ucagaguye",
+   "description": "Abujijwe kuwurenga keretse iyo anyura ku kindi kinyabiziga, akatira ibumoso, ahindukira cyangwa ajya mu kindi gisate cy'umuhanda.",
+   "image": "m-2.webp"
+  },
+  {
+   "id": "m-3",
+   "code": "M.3",
+   "category": "imirongo",
+   "name": "Uduce tugufi twegeranye",
+   "description": "Uduce tw'umurongo tugufi kandi twegeranye twerekana ko umurongo udacagaguye wegereje: ntukawurenge.",
+   "image": "m-3.webp"
+  },
+  {
+   "id": "m-4",
+   "code": "M.4",
+   "category": "imirongo",
+   "name": "Umurongo udacagaguye n'ucagaguye bibangikanye",
+   "description": "Umuyobozi yita gusa ku murongo umwegereye. Ushobora kurenga ucagaguye uri ku ruhande rwawe, ariko ntiwarenga udacagaguye uri ku ruhande rwawe.",
+   "image": "m-4.webp"
+  },
+  {
+   "id": "m-5",
+   "code": "M.5",
+   "category": "imirongo",
+   "name": "Igisate cy'ibitwara abantu muri rusange",
+   "description": "Igice gikikijwe n'uduce tugari tw'ibara ryera: gitegeka ibinyabiziga bitwara abantu muri rusange n'ibigenda buhoro kukinyuramo.",
+   "image": "m-5.webp"
+  },
+  {
+   "id": "m-6",
+   "code": "M.6",
+   "category": "imirongo",
+   "name": "Inzira y'amagare",
+   "description": "Igice kigarukira ku mirongo ibiri yera icagaguye ibangikanye, kidafite ubugari buhagije ku modoka: ni inzira y'ibinyamitende.",
+   "image": "m-6.webp"
+  },
+  {
+   "id": "m-7",
+   "code": "M.7",
+   "category": "imirongo",
+   "name": "Umurongo wera ku nkengero y'umuhanda",
+   "description": "Werekana aho umuhanda ugarukira; birabujijwe kuwurenga ugenda, uhagarara umwanya muto cyangwa umunini ku nkengero.",
+   "image": "m-7.webp"
+  },
+  {
+   "id": "m-8",
+   "code": "M.8",
+   "category": "imirongo",
+   "name": "Umurongo w'umuhondo ucagaguye ku nkengero",
+   "description": "Bibujijwe guhagarara umwanya munini ku burebure bw'uwo murongo.",
+   "image": "m-8.webp"
+  },
+  {
+   "id": "m-9",
+   "code": "M.9",
+   "category": "imirongo",
+   "name": "Umurongo wera mugari w'inkengero itari nyayo",
+   "description": "Igice cy'umuhanda kiri hirya y'uwo murongo kigenewe guhagararwamo umwanya muto cyangwa munini.",
+   "image": "m-9.webp"
+  },
+  {
+   "id": "m-10",
+   "code": "M.10",
+   "category": "imirongo",
+   "name": "Imirongo yera yambukiranya y'aho bahagarara",
+   "description": "Yerekana itangiriro n'iherezo by'ahantu hahagararwa, n'imyanya ibinyabiziga bihagararamo.",
+   "image": "m-10.webp"
+  }
+ ]
+}

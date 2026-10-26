@@ -1,0 +1,46 @@
+[project]
+name = "gira-perimi-be"
+version = "0.1.0"
+description = "Gira Perimi API: Kinyarwanda driving-theory lessons, road signs, practice and timed mock exams for Rwanda."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "alembic>=1.20.1",
+    "anyio>=4.15.1",
+    "bcrypt>=5.0.0",
+    "cryptography<49 ; platform_machine == 'x86_64' and sys_platform == 'darwin'",
+    "fastapi[standard]>=0.162.0",
+    "google-auth>=2.62.0",
+    "pydantic-settings>=2.16.1",
+    "pyjwt>=2.15.1",
+    "requests>=2.34.2",
+    "sqlalchemy[asyncio]>=2.1.6",
+]
+
+[dependency-groups]
+content = [
+    "pillow>=13.0.0",
+    "pymupdf<2",
+]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# scripts/content is the one-off PDF extraction pipeline used to build app/data; kept as-is for reproducibility.
+extend-exclude = ["alembic/versions", "scripts/content"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "SIM"]
+ignore = ["B008"]

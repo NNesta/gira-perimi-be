@@ -1,0 +1,57 @@
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+from app.schemas.content import OptionOut
+
+
+class ExamItemOut(BaseModel):
+    position: int
+    question_id: int
+    ref: str
+    text: str
+    image: str | None
+    options: list[OptionOut]
+    topic: str
+    selected: int | None
+    # Only revealed once the exam is completed.
+    answer: int | None = None
+    is_correct: bool | None = None
+
+
+class ExamOut(BaseModel):
+    id: uuid.UUID
+    status: str
+    started_at: datetime
+    deadline_at: datetime
+    submitted_at: datetime | None
+    server_time: datetime
+    auto_submitted: bool
+    total: int
+    score: int | None
+    pass_mark: int
+    passed: bool | None
+    answered: int
+    items: list[ExamItemOut]
+
+
+class ExamSummaryOut(BaseModel):
+    id: uuid.UUID
+    status: str
+    started_at: datetime
+    submitted_at: datetime | None
+    total: int
+    score: int | None
+    passed: bool | None
+    duration_seconds: int | None
+
+
+class AnswerIn(BaseModel):
+    selected: int | None = Field(default=None, ge=0, le=3)
+
+
+class AnswerSavedOut(BaseModel):
+    position: int
+    selected: int | None
+    answered: int
