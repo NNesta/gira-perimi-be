@@ -19,6 +19,9 @@ class QuestionOut(BaseModel):
 
 class QuestionWithAnswerOut(QuestionOut):
     answer: int
+    # Why the answer is right, and the article of law behind it (when known).
+    explanation: str | None = None
+    law_ref: str | None = None
 
 
 class TopicOut(BaseModel):

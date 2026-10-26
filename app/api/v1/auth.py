@@ -22,7 +22,11 @@ def _start_session(response: Response, user: User) -> None:
 
 @router.get("/config")
 async def auth_config() -> AuthConfigOut:
-    return AuthConfigOut(google_client_id=settings.GOOGLE_CLIENT_ID or None, paywall_enabled=settings.PAYWALL_ENABLED)
+    return AuthConfigOut(
+        google_client_id=settings.GOOGLE_CLIENT_ID or None,
+        paywall_enabled=settings.PAYWALL_ENABLED,
+        reminders_available=settings.reminders_available,
+    )
 
 
 @router.post("/google", response_model=UserOut)

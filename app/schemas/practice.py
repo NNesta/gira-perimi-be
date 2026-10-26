@@ -1,3 +1,5 @@
+import uuid
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -24,3 +26,22 @@ class PracticeAnswerOut(BaseModel):
     selected: int
     answer: int
     correct: bool
+    explanation: str | None = None
+    law_ref: str | None = None
+
+
+class OfflineAnswerIn(PracticeAnswerIn):
+    """An answer given while offline, synced later. `client_id` makes retries safe."""
+
+    client_id: uuid.UUID
+    answered_at: datetime
+
+
+class OfflineAnswersIn(BaseModel):
+    answers: list[OfflineAnswerIn] = Field(max_length=500)
+
+
+class OfflineSyncOut(BaseModel):
+    saved: int
+    duplicates: int
+    skipped: int

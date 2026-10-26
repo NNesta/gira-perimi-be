@@ -18,6 +18,8 @@ class ExamItemOut(BaseModel):
     # Only revealed once the exam is completed.
     answer: int | None = None
     is_correct: bool | None = None
+    explanation: str | None = None
+    law_ref: str | None = None
 
 
 class ExamOut(BaseModel):

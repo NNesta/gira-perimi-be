@@ -1,7 +1,14 @@
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.core.deps import DB, Content, PaidUser
-from app.schemas.practice import PracticeAnswerIn, PracticeAnswerOut, PracticeMode, PracticeSetOut
+from app.schemas.practice import (
+    OfflineAnswersIn,
+    OfflineSyncOut,
+    PracticeAnswerIn,
+    PracticeAnswerOut,
+    PracticeMode,
+    PracticeSetOut,
+)
 from app.services import practice as practice_service
 from app.services.content import TOPIC_IDS
 
@@ -27,7 +34,22 @@ async def practice_questions(
 @router.post("/answers", status_code=status.HTTP_201_CREATED)
 async def answer(body: PracticeAnswerIn, db: DB, user: PaidUser, content: Content) -> PracticeAnswerOut:
     try:
-        question, correct = await practice_service.record_answer(db, user, content, body.question_id, body.selected)
+        question, correct, note = await practice_service.record_answer(
+            db, user, content, body.question_id, body.selected
+        )
     except KeyError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Icyo kibazo ntikibonetse.") from exc
-    return PracticeAnswerOut(question_id=question.id, selected=body.selected, answer=question.answer, correct=correct)
+    return PracticeAnswerOut(
+        question_id=question.id,
+        selected=body.selected,
+        answer=question.answer,
+        correct=correct,
+        explanation=note.text,
+        law_ref=note.law_ref,
+    )
+
+
+@router.post("/answers/offline")
+async def sync_offline_answers(body: OfflineAnswersIn, db: DB, user: PaidUser, content: Content) -> OfflineSyncOut:
+    """Saves answers given while offline (sent again until acknowledged; duplicates are ignored)."""
+    return await practice_service.sync_offline(db, user, content, body.answers)

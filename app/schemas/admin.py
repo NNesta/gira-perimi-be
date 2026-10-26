@@ -5,8 +5,10 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.schemas.common import ORMModel
+from app.schemas.content import OptionOut
 from app.schemas.exam import ExamSummaryOut
 from app.schemas.progress import ExamStatsOut, ReadinessOut, TopicMasteryOut
+from app.schemas.review import ReviewSummaryOut
 
 
 class AdminLoginIn(BaseModel):
@@ -88,6 +90,10 @@ class AdminUserDetailOut(BaseModel):
     lessons_total: int
     practice_answers: int
     recent_exams: list[ExamSummaryOut]
+    exam_date: date | None
+    daily_goal: int
+    streak_days: int
+    review: ReviewSummaryOut
 
 
 class AdminUserUpdate(BaseModel):
@@ -96,3 +102,46 @@ class AdminUserUpdate(BaseModel):
 
 
 UserSort = Literal["joined", "name", "exams", "average", "last_active"]
+
+QuestionFilter = Literal["all", "missing", "unreviewed", "reviewed", "edited"]
+QuestionSort = Literal["number", "hardest", "most_answered"]
+
+
+class AdminQuestionOut(BaseModel):
+    id: int
+    ref: str
+    text: str
+    image: str | None
+    options: list[OptionOut]
+    answer: int
+    topic: str
+    explanation: str | None
+    law_ref: str | None
+    reviewed: bool
+    edited: bool
+    updated_at: datetime | None
+    updated_by: str | None
+    # How learners did on this question, across practice and finished exams.
+    answered: int
+    accuracy: float | None
+
+
+class ExplanationCountsOut(BaseModel):
+    total: int
+    with_explanation: int
+    reviewed: int
+    edited: int
+
+
+class AdminQuestionsOut(BaseModel):
+    items: list[AdminQuestionOut]
+    total: int
+    page: int
+    page_size: int
+    counts: ExplanationCountsOut
+
+
+class ExplanationUpdate(BaseModel):
+    explanation: str = Field(max_length=2000)
+    law_ref: str | None = Field(default=None, max_length=200)
+    reviewed: bool = False

@@ -11,19 +11,26 @@ from app.models import Admin, User
 from app.schemas.admin import (
     AdminLoginIn,
     AdminOut,
+    AdminQuestionOut,
+    AdminQuestionsOut,
     AdminUserDetailOut,
     AdminUserRowOut,
     AdminUserUpdate,
+    ExplanationUpdate,
     PlatformStatsOut,
+    QuestionFilter,
+    QuestionSort,
     UserSort,
 )
 from app.schemas.common import Page
 from app.services import admin as admin_service
 from app.services import auth as auth_service
+from app.services.content import TOPIC_IDS, Question
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 login_limiter = SlidingWindowLimiter(settings.ADMIN_LOGIN_MAX_ATTEMPTS, settings.ADMIN_LOGIN_WINDOW_SECONDS)
 USER_NOT_FOUND = "Uwo munyeshuri ntabonetse."
+QUESTION_NOT_FOUND = "Icyo kibazo ntikibonetse."
 
 
 def _client_ip(request: Request) -> str:
@@ -105,3 +112,51 @@ async def update_user(
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: uuid.UUID, _: CurrentAdmin, db: DB) -> None:
     await admin_service.delete_user(db, await _get_user(db, user_id))
+
+
+@router.get("/questions")
+async def questions(
+    _: CurrentAdmin,
+    db: DB,
+    content: Content,
+    search: str | None = Query(None, max_length=100),
+    topic: str | None = None,
+    status_filter: QuestionFilter = Query("all", alias="status"),
+    sort: QuestionSort = "number",
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> AdminQuestionsOut:
+    """Question bank with explanations, their review status and how often learners get each question right."""
+    return await admin_service.list_questions(
+        db,
+        content,
+        search=search,
+        topic=topic if topic in TOPIC_IDS else None,
+        status=status_filter,
+        sort=sort,
+        page=page,
+        page_size=page_size,
+    )
+
+
+def _question(content: Content, question_id: int) -> Question:
+    question = content.questions.get(question_id)
+    if question is None or not question.active:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, QUESTION_NOT_FOUND)
+    return question
+
+
+@router.put("/questions/{question_id}/explanation")
+async def save_explanation(
+    question_id: int, body: ExplanationUpdate, admin: CurrentAdmin, db: DB, content: Content
+) -> AdminQuestionOut:
+    question = _question(content, question_id)
+    await admin_service.save_explanation(db, question, body, admin)
+    return await admin_service.question_out(db, content, question)
+
+
+@router.delete("/questions/{question_id}/explanation")
+async def reset_explanation(question_id: int, _: CurrentAdmin, db: DB, content: Content) -> AdminQuestionOut:
+    question = _question(content, question_id)
+    await admin_service.reset_explanation(db, question)
+    return await admin_service.question_out(db, content, question)

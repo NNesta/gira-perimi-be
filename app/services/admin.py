@@ -7,22 +7,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.base import utcnow
-from app.models import ExamAnswer, ExamAttempt, PracticeAnswer, User
+from app.models import Admin, ExamAnswer, ExamAttempt, PracticeAnswer, QuestionExplanation, User
 from app.models.exam import STATUS_COMPLETED
 from app.schemas.admin import (
+    AdminQuestionOut,
+    AdminQuestionsOut,
     AdminUserDetailOut,
     AdminUserRowOut,
     AdminUserUpdate,
     DailyPointOut,
+    ExplanationCountsOut,
+    ExplanationUpdate,
     PlatformStatsOut,
+    QuestionFilter,
+    QuestionSort,
     ScoreBucketOut,
     TopicDifficultyOut,
     UserSort,
 )
 from app.schemas.common import Page
+from app.schemas.content import OptionOut
 from app.services import exams as exam_service
-from app.services import progress
-from app.services.content import TOPICS, ContentStore
+from app.services import explanations, progress, review
+from app.services.content import TOPICS, ContentStore, Question
+from app.services.dates import KIGALI
 from app.services.practice import answer_history
 
 DAILY_WINDOW = 30
@@ -41,6 +49,26 @@ def _exam_aggregates():
         .group_by(ExamAttempt.user_id)
         .subquery()
     )
+
+
+async def _per_question(db: AsyncSession) -> dict[int, list[int]]:
+    """question_id -> [answers, correct answers], across practice and finished exams."""
+    per_question: dict[int, list[int]] = defaultdict(lambda: [0, 0])
+    practice_rows = await db.execute(
+        select(
+            PracticeAnswer.question_id, func.count(), func.sum(case((PracticeAnswer.is_correct, 1), else_=0))
+        ).group_by(PracticeAnswer.question_id)
+    )
+    exam_rows = await db.execute(
+        select(ExamAnswer.question_id, func.count(), func.sum(case((ExamAnswer.is_correct, 1), else_=0)))
+        .join(ExamAttempt, ExamAnswer.attempt_id == ExamAttempt.id)
+        .where(ExamAttempt.status == STATUS_COMPLETED)
+        .group_by(ExamAnswer.question_id)
+    )
+    for qid, n, ok in [*practice_rows.all(), *exam_rows.all()]:
+        per_question[qid][0] += n
+        per_question[qid][1] += ok or 0
+    return per_question
 
 
 async def _count(db: AsyncSession, model, *where) -> int:
@@ -66,7 +94,7 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
     average, passed, total_exams = score_row
 
     # Day buckets in Kigali time (UTC+2); timestamps are stored as naive UTC.
-    since = (now - timedelta(days=DAILY_WINDOW - 1)).astimezone(progress.KIGALI).date()
+    since = (now - timedelta(days=DAILY_WINDOW - 1)).astimezone(KIGALI).date()
     signup_day = func.date(User.created_at, "+2 hours")
     exam_day = func.date(ExamAttempt.submitted_at, "+2 hours")
     signups = dict((await db.execute(select(signup_day, func.count()).group_by(signup_day))).all())
@@ -82,21 +110,7 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
     )
     distribution = [ScoreBucketOut(score=s, count=buckets.get(s, 0)) for s in range(settings.EXAM_QUESTION_COUNT + 1)]
 
-    per_question: dict[int, list[int]] = defaultdict(lambda: [0, 0])
-    practice_rows = await db.execute(
-        select(
-            PracticeAnswer.question_id, func.count(), func.sum(case((PracticeAnswer.is_correct, 1), else_=0))
-        ).group_by(PracticeAnswer.question_id)
-    )
-    exam_rows = await db.execute(
-        select(ExamAnswer.question_id, func.count(), func.sum(case((ExamAnswer.is_correct, 1), else_=0)))
-        .join(ExamAttempt, ExamAnswer.attempt_id == ExamAttempt.id)
-        .where(completed)
-        .group_by(ExamAnswer.question_id)
-    )
-    for qid, n, ok in [*practice_rows.all(), *exam_rows.all()]:
-        per_question[qid][0] += n
-        per_question[qid][1] += ok or 0
+    per_question = await _per_question(db)
     topic_totals: dict[str, list[int]] = defaultdict(lambda: [0, 0])
     for qid, (n, ok) in per_question.items():
         topic = content.topic_of(qid)
@@ -184,6 +198,7 @@ async def user_detail(db: AsyncSession, user: User, content: ContentStore) -> Ad
             select(ExamAttempt).where(ExamAttempt.user_id == user.id).order_by(ExamAttempt.started_at.desc()).limit(20)
         )
     ).all()
+    today = progress.local_day(utcnow())
     return AdminUserDetailOut(
         id=user.id,
         email=user.email,
@@ -202,6 +217,10 @@ async def user_detail(db: AsyncSession, user: User, content: ContentStore) -> Ad
         lessons_total=len(content.lessons),
         practice_answers=await _count(db, PracticeAnswer, PracticeAnswer.user_id == user.id),
         recent_exams=[exam_service.to_summary(e) for e in recent],
+        exam_date=user.exam_date,
+        daily_goal=user.daily_goal,
+        streak_days=progress.streak(await progress.active_days(db, user.id, today - timedelta(days=400)), today),
+        review=await review.summary(db, user.id),
     )
 
 
@@ -223,3 +242,110 @@ async def delete_user(db: AsyncSession, user: User) -> None:
     """Removes the learner and, through ON DELETE CASCADE, all of their exams, answers and progress."""
     await db.delete(user)
     await db.commit()
+
+
+# ---------------------------------------------------------------------- explanations
+def _search_key(text: str) -> str:
+    return text.lower().replace("’", "'")
+
+
+def _question_out(q: Question, note: explanations.Explanation, stats: list[int] | None) -> AdminQuestionOut:
+    answered, correct = stats or (0, 0)
+    return AdminQuestionOut(
+        id=q.id,
+        ref=q.ref,
+        text=q.text,
+        image=q.image,
+        options=[OptionOut(text=o.text, image=o.image) for o in q.options],
+        answer=q.answer,
+        topic=q.topic,
+        explanation=note.text,
+        law_ref=note.law_ref,
+        reviewed=note.reviewed,
+        edited=note.edited,
+        updated_at=note.updated_at,
+        updated_by=note.updated_by,
+        answered=answered,
+        accuracy=round(correct / answered, 4) if answered else None,
+    )
+
+
+async def list_questions(
+    db: AsyncSession,
+    content: ContentStore,
+    *,
+    search: str | None,
+    topic: str | None,
+    status: QuestionFilter,
+    sort: QuestionSort,
+    page: int,
+    page_size: int,
+) -> AdminQuestionsOut:
+    edits = await explanations.overrides(db)
+    stats = await _per_question(db)
+    rows = [
+        _question_out(q, explanations.resolve(q, edits.get(q.id)), stats.get(q.id))
+        for q in content.questions.values()
+        if q.active
+    ]
+    counts = ExplanationCountsOut(
+        total=len(rows),
+        with_explanation=sum(r.explanation is not None for r in rows),
+        reviewed=sum(r.reviewed for r in rows),
+        edited=sum(r.edited for r in rows),
+    )
+    if topic:
+        rows = [r for r in rows if r.topic == topic]
+    keep = {
+        "all": lambda r: True,
+        "missing": lambda r: r.explanation is None,
+        "unreviewed": lambda r: r.explanation is not None and not r.reviewed,
+        "reviewed": lambda r: r.reviewed,
+        "edited": lambda r: r.edited,
+    }[status]
+    rows = [r for r in rows if keep(r)]
+    if search:
+        term = _search_key(search.strip())
+        rows = [
+            r
+            for r in rows
+            if term == r.ref
+            or term in _search_key(" ".join([r.text, r.explanation or "", *(o.text for o in r.options)]))
+        ]
+    if sort == "hardest":
+        rows.sort(key=lambda r: (r.accuracy is None, r.accuracy or 0, -r.answered, r.id))
+    elif sort == "most_answered":
+        rows.sort(key=lambda r: (-r.answered, r.id))
+    else:
+        rows.sort(key=lambda r: r.id)
+    start = (page - 1) * page_size
+    return AdminQuestionsOut(
+        items=rows[start : start + page_size], total=len(rows), page=page, page_size=page_size, counts=counts
+    )
+
+
+async def question_out(db: AsyncSession, content: ContentStore, question: Question) -> AdminQuestionOut:
+    edits = await explanations.overrides(db, [question.id])
+    stats = await _per_question(db)
+    return _question_out(question, explanations.resolve(question, edits.get(question.id)), stats.get(question.id))
+
+
+async def save_explanation(db: AsyncSession, question: Question, data: ExplanationUpdate, admin: Admin) -> None:
+    row = await db.get(QuestionExplanation, question.id)
+    if row is None:
+        row = QuestionExplanation(question_id=question.id)
+        db.add(row)
+    row.text = data.explanation.strip()
+    row.law_ref = (data.law_ref or "").strip() or None
+    row.reviewed = data.reviewed
+    row.updated_at = utcnow()
+    row.updated_by = admin.email
+    await db.commit()
+
+
+async def reset_explanation(db: AsyncSession, question: Question) -> None:
+    """Drops the admin's edit; the default explanation from app/data/explanations.json applies again."""
+    row = await db.get(QuestionExplanation, question.id)
+    if row is not None:
+        await db.delete(row)
+        await db.commit()

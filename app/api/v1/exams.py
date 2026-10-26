@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 from app.core.deps import DB, Content, PaidUser
 from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut
 from app.services import exams as exam_service
+from app.services import explanations
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -34,11 +35,18 @@ async def list_exams(
     return [exam_service.to_summary(a) for a in attempts]
 
 
+async def _out(db: DB, attempt, content: Content) -> ExamOut:
+    notes = None
+    if attempt.is_completed:
+        notes = await explanations.for_questions(db, content, [a.question_id for a in attempt.answers])
+    return exam_service.to_out(attempt, content, notes)
+
+
 @router.get("/{exam_id}")
 async def get_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content) -> ExamOut:
     attempt = await _load(db, user, exam_id)
     await exam_service.finalize_expired(db, attempt, content)
-    return exam_service.to_out(attempt, content)
+    return await _out(db, attempt, content)
 
 
 @router.put("/{exam_id}/answers/{position}")
@@ -68,4 +76,4 @@ async def save_answer(
 async def submit_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content) -> ExamOut:
     attempt = await _load(db, user, exam_id)
     await exam_service.submit(db, attempt, content)
-    return exam_service.to_out(attempt, content)
+    return await _out(db, attempt, content)

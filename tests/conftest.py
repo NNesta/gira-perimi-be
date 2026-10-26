@@ -60,6 +60,8 @@ async def client(session_factory, monkeypatch) -> AsyncIterator[AsyncClient]:
             yield session
 
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
+    monkeypatch.setattr(settings, "SMTP_HOST", "")  # reminders off unless a test switches them on
+    monkeypatch.setattr(settings, "SMTP_FROM", "")
     monkeypatch.setattr(id_token, "verify_oauth2_token", fake_verify_oauth2_token)
     app.dependency_overrides[get_db] = override_db
     login_limiter._hits.clear()

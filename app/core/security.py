@@ -11,7 +11,8 @@ from app.db.base import utcnow
 
 USER_COOKIE = "gp_session"
 ADMIN_COOKIE = "gp_admin"
-TokenKind = Literal["user", "admin"]
+# "unsubscribe" tokens ride in reminder emails and can only switch reminders off.
+TokenKind = Literal["user", "admin", "unsubscribe"]
 ALGORITHM = "HS256"
 
 

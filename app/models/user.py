@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, String, Uuid
+from sqlalchemy import Boolean, Date, SmallInteger, String, Uuid, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -32,6 +32,12 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     last_active_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+    # Study plan: the day of the real exam, the daily question goal and opt-in reminder emails.
+    exam_date: Mapped[date | None] = mapped_column(Date)
+    daily_goal: Mapped[int] = mapped_column(SmallInteger, default=20, server_default=text("20"))
+    reminders: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    last_reminded_on: Mapped[date | None] = mapped_column(Date)
 
     exams: Mapped[list["ExamAttempt"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True

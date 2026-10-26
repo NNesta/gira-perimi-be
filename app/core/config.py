@@ -44,6 +44,18 @@ class Settings(BaseSettings):
     # Future subscriptions: when enabled, practice/exams/premium lessons require an active plan.
     PAYWALL_ENABLED: bool = False
 
+    # Study plan: questions a learner aims to answer each day unless they choose another goal.
+    DEFAULT_DAILY_GOAL: int = 20
+
+    # Daily reminder emails (opt-in). Sent by `python -m app.cli send-reminders`, run once a day by a scheduler.
+    # Leave SMTP_HOST empty to switch reminders off; learners then never see the option.
+    SITE_URL: str = "http://localhost:3000"
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = ""
+
     @model_validator(mode="after")
     def _check_production(self) -> "Settings":
         if self.ENVIRONMENT == "production":
@@ -51,6 +63,10 @@ class Settings(BaseSettings):
                 raise ValueError("SECRET_KEY must be set to a random value of at least 32 characters in production")
             self.COOKIE_SECURE = True
         return self
+
+    @property
+    def reminders_available(self) -> bool:
+        return bool(self.SMTP_HOST and self.SMTP_FROM)
 
 
 @lru_cache

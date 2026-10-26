@@ -1,35 +1,38 @@
+import math
+import uuid
 from collections import defaultdict
-from datetime import date, datetime, timedelta, timezone
+from collections.abc import Iterable
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.base import utcnow
-from app.models import ExamAttempt, LessonProgress, PracticeAnswer, User
+from app.models import ExamAnswer, ExamAttempt, LessonProgress, PracticeAnswer, User
 from app.models.exam import STATUS_COMPLETED
 from app.schemas.progress import (
     ActivityDayOut,
     DashboardOut,
     ExamStatsOut,
     LessonProgressOut,
+    PlanOut,
     ReadinessOut,
     ScorePointOut,
+    TodayOut,
     TopicMasteryOut,
 )
 from app.schemas.user import UserOut
 from app.services import exams as exam_service
+from app.services import review
 from app.services.content import TOPICS, ContentStore
+from app.services.dates import day_start, local_day
 from app.services.practice import answer_history
 
-# Rwanda is UTC+2 all year (no daylight saving), so a fixed offset is exact.
-KIGALI = timezone(timedelta(hours=2), "CAT")
 TREND_LENGTH = 20
 ACTIVITY_DAYS = 14
-
-
-def local_day(moment: datetime) -> date:
-    return moment.astimezone(KIGALI).date()
+# Without an exam date, suggest a mock exam when the last one is at least this many days old.
+DEFAULT_EXAM_EVERY_DAYS = 2
 
 
 def readiness_status(count: int, average: float | None) -> tuple[bool, str]:
@@ -108,6 +111,103 @@ def streak(days: set[date], today: date) -> int:
     return count
 
 
+async def answered_since(db: AsyncSession, since: datetime, user_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, int]:
+    """Questions answered since `since` per learner: practice answers plus answered questions of finished exams."""
+    user_ids = list(user_ids)
+    counts: dict[uuid.UUID, int] = defaultdict(int)
+    practice = await db.execute(
+        select(PracticeAnswer.user_id, func.count())
+        .where(PracticeAnswer.user_id.in_(user_ids), PracticeAnswer.answered_at >= since)
+        .group_by(PracticeAnswer.user_id)
+    )
+    exams = await db.execute(
+        select(ExamAttempt.user_id, func.count(ExamAnswer.id))
+        .join(ExamAnswer, ExamAnswer.attempt_id == ExamAttempt.id)
+        .where(
+            ExamAttempt.user_id.in_(user_ids),
+            ExamAttempt.status == STATUS_COMPLETED,
+            ExamAttempt.submitted_at >= since,
+            ExamAnswer.selected.is_not(None),
+        )
+        .group_by(ExamAttempt.user_id)
+    )
+    for user_id, n in [*practice.all(), *exams.all()]:
+        counts[user_id] += n
+    return dict(counts)
+
+
+async def active_days(db: AsyncSession, user_id: uuid.UUID, since: date) -> set[date]:
+    """Kigali days with any practice answer, finished exam or completed lesson since `since`."""
+    start = day_start(since)
+    moments = [
+        *await db.scalars(
+            select(PracticeAnswer.answered_at).where(
+                PracticeAnswer.user_id == user_id, PracticeAnswer.answered_at >= start
+            )
+        ),
+        *await db.scalars(
+            select(ExamAttempt.submitted_at).where(
+                ExamAttempt.user_id == user_id,
+                ExamAttempt.status == STATUS_COMPLETED,
+                ExamAttempt.submitted_at >= start,
+            )
+        ),
+        *await db.scalars(
+            select(LessonProgress.completed_at).where(
+                LessonProgress.user_id == user_id, LessonProgress.completed_at >= start
+            )
+        ),
+    ]
+    return {local_day(at) for at in moments}
+
+
+def study_plan(user: User, today: date, lessons_left: int, exams_left: int) -> PlanOut:
+    """Turns the exam date into a pace: is there enough time, and how often to sit a mock exam."""
+    if user.exam_date is None:
+        return PlanOut(
+            exam_date=None,
+            days_left=None,
+            lessons_left=lessons_left,
+            exams_left=exams_left,
+            pace="none",
+            exam_every_days=None,
+            exams_per_day=None,
+        )
+    days_left = (user.exam_date - today).days
+    every = per_day = None
+    if days_left < 0:
+        pace = "passed"
+    elif days_left == 0:
+        pace = "today"
+    else:
+        pace = "tight" if exams_left > 2 * days_left or lessons_left > 3 * days_left else "on_track"
+        if exams_left:
+            if exams_left <= days_left:
+                every = days_left // exams_left
+            else:
+                every, per_day = 1, math.ceil(exams_left / days_left)
+    return PlanOut(
+        exam_date=user.exam_date,
+        days_left=days_left,
+        lessons_left=lessons_left,
+        exams_left=exams_left,
+        pace=pace,
+        exam_every_days=every,
+        exams_per_day=per_day,
+    )
+
+
+def suggest_exam(plan: PlanOut, exams: list[ExamAttempt], today: date) -> bool:
+    if plan.exams_left == 0 or plan.pace in ("today", "passed"):
+        return False
+    if not exams:
+        return True
+    last = local_day(exams[-1].submitted_at)
+    if last == today:
+        return False
+    return (today - last).days >= (plan.exam_every_days or DEFAULT_EXAM_EVERY_DAYS)
+
+
 async def completed_exams(db: AsyncSession, user_id) -> list[ExamAttempt]:
     result = await db.scalars(
         select(ExamAttempt)
@@ -146,14 +246,22 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
     activity: dict[date, int] = defaultdict(int)
     for _, _, at in history:
         activity[local_day(at)] += 1
-    active_days = set(activity)
-    lesson_rows = await db.scalars(select(LessonProgress.completed_at).where(LessonProgress.user_id == user.id))
-    active_days.update(local_day(at) for at in lesson_rows)
+    days_active = set(activity)
+    lesson_days = {
+        local_day(at)
+        for at in await db.scalars(select(LessonProgress.completed_at).where(LessonProgress.user_id == user.id))
+    }
+    days_active.update(lesson_days)
+
+    lessons_out = lesson_progress(lessons, content)
+    readiness_out = readiness(scores)
+    plan = study_plan(user, today, lessons_out.total - lessons_out.completed, readiness_out.exams_remaining)
+    answered_today = (await answered_since(db, day_start(today), [user.id])).get(user.id, 0)
 
     recent = sorted(exams, key=lambda e: e.submitted_at, reverse=True)[:5]
     return DashboardOut(
         user=UserOut.model_validate(user),
-        readiness=readiness(scores),
+        readiness=readiness_out,
         exams=exam_stats(scores),
         trend=[
             ScorePointOut(
@@ -165,17 +273,26 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
             for e in exams[-TREND_LENGTH:]
         ],
         topics=topic_mastery(history, content),
-        lessons=lesson_progress(lessons, content),
+        lessons=lessons_out,
         practice_answers=practice_count,
         questions_seen=len(
             {qid for qid, _, _ in history if qid in content.questions and content.questions[qid].active}
         ),
         question_total=len(content.active_ids),
-        streak_days=streak(active_days, today),
+        streak_days=streak(days_active, today),
         activity=[
             ActivityDayOut(day=today - timedelta(days=i), answers=activity.get(today - timedelta(days=i), 0))
             for i in range(ACTIVITY_DAYS - 1, -1, -1)
         ],
         recent_exams=[exam_service.to_summary(e) for e in recent],
         in_progress_exam=str(running.id) if running else None,
+        today=TodayOut(
+            answered=answered_today,
+            goal=user.daily_goal,
+            lesson_done=today in lesson_days,
+            exam_done=any(local_day(e.submitted_at) == today for e in exams),
+            exam_suggested=suggest_exam(plan, exams, today),
+        ),
+        plan=plan,
+        review=await review.summary(db, user.id),
     )

@@ -16,7 +16,7 @@ from app.schemas.content import (
     SignsOut,
     TopicOut,
 )
-from app.services.practice import to_question_out
+from app.services.practice import questions_out
 
 router = APIRouter(tags=["content"])
 
@@ -97,6 +97,6 @@ async def signs(content: Content) -> SignsOut:
 
 
 @router.get("/questions/sample")
-async def sample_questions(content: Content, count: int = Query(5, ge=1, le=10)) -> list[QuestionWithAnswerOut]:
+async def sample_questions(content: Content, db: DB, count: int = Query(5, ge=1, le=10)) -> list[QuestionWithAnswerOut]:
     """A small public quiz for visitors (landing page demo). Answers are included: feedback is instant."""
-    return [to_question_out(content.questions[qid]) for qid in content.draw_exam(count)]
+    return await questions_out(db, content, content.draw_exam(count))

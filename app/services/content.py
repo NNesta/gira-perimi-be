@@ -1,5 +1,6 @@
 """Static learning content: question bank, lessons and road signs, loaded once per process."""
 
+import hashlib
 import json
 import random
 from dataclasses import dataclass
@@ -97,11 +98,19 @@ class Question:
     topic: str
     active: bool
     note: str | None
+    # Why the answer is right, in Kinyarwanda, and the article of law it rests on (admins can override both).
+    explanation: str | None = None
+    law_ref: str | None = None
 
 
 class ContentStore:
     def __init__(self, data_dir: Path = DATA_DIR, lessons_dir: Path = LESSONS_DIR) -> None:
-        raw_questions = json.loads((data_dir / "questions.json").read_text(encoding="utf-8"))
+        questions_raw = (data_dir / "questions.json").read_bytes()
+        explanations_raw = (data_dir / "explanations.json").read_bytes()
+        # Changes whenever the bank or its default explanations change; offline copies compare against it.
+        self.version = hashlib.sha256(questions_raw + explanations_raw).hexdigest()[:16]
+        raw_questions = json.loads(questions_raw)
+        explanations: dict[str, dict] = json.loads(explanations_raw)
         self.questions: dict[int, Question] = {}
         for q in raw_questions:
             if q["topic"] not in TOPIC_IDS:
@@ -118,7 +127,12 @@ class ContentStore:
                 topic=q["topic"],
                 active=q["active"] and q["answer"] is not None,
                 note=q.get("note"),
+                explanation=explanations.get(str(q["id"]), {}).get("text") or None,
+                law_ref=explanations.get(str(q["id"]), {}).get("law") or None,
             )
+        unknown = set(explanations) - {str(qid) for qid in self.questions}
+        if unknown:
+            raise ValueError(f"explanations for unknown questions: {sorted(unknown)[:5]}")
         self.active_ids: list[int] = [q.id for q in self.questions.values() if q.active]
         self.ids_by_topic: dict[str, list[int]] = {t: [] for t in TOPIC_IDS}
         for qid in self.active_ids:
@@ -127,6 +141,7 @@ class ContentStore:
         signs_data = json.loads((data_dir / "signs.json").read_text(encoding="utf-8"))
         self.sign_categories: list[dict] = signs_data["categories"]
         self.signs: list[dict] = [{**s, "image": SIGN_MEDIA + s["image"]} for s in signs_data["signs"]]
+        self.signs_by_id: dict[str, dict] = {s["id"]: s for s in self.signs}
         self._signs_by_code: dict[str, list[dict]] = {}
         for sign in self.signs:
             self._signs_by_code.setdefault(sign["code"], []).append(sign)

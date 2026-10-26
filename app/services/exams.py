@@ -11,7 +11,9 @@ from app.models import ExamAnswer, ExamAttempt, User
 from app.models.exam import STATUS_COMPLETED, STATUS_IN_PROGRESS
 from app.schemas.content import OptionOut
 from app.schemas.exam import ExamItemOut, ExamOut, ExamSummaryOut
+from app.services import review
 from app.services.content import ContentStore
+from app.services.explanations import Explanation
 
 
 class ExamNotFound(Exception):
@@ -52,10 +54,20 @@ def grade(attempt: ExamAttempt, content: ContentStore, *, auto: bool) -> None:
     attempt.submitted_at = min(now, attempt.deadline_at)
 
 
+async def _schedule_review(db: AsyncSession, attempt: ExamAttempt) -> None:
+    """Answered questions feed the spaced review: mistakes come back tomorrow, due items move on."""
+    await review.record_questions(
+        db,
+        attempt.user_id,
+        [(a.question_id, bool(a.is_correct), attempt.submitted_at) for a in attempt.answers if a.selected is not None],
+    )
+
+
 async def finalize_expired(db: AsyncSession, attempt: ExamAttempt, content: ContentStore) -> bool:
     """Grades an abandoned exam with the answers saved before the clock ran out."""
     if attempt.status == STATUS_IN_PROGRESS and is_expired(attempt):
         grade(attempt, content, auto=True)
+        await _schedule_review(db, attempt)
         await db.commit()
         return True
     return False
@@ -110,6 +122,7 @@ async def save_answer(
 async def submit(db: AsyncSession, attempt: ExamAttempt, content: ContentStore) -> ExamAttempt:
     if attempt.status == STATUS_IN_PROGRESS:
         grade(attempt, content, auto=is_expired(attempt))
+        await _schedule_review(db, attempt)
         await db.commit()
     return attempt
 
@@ -149,11 +162,14 @@ def to_summary(attempt: ExamAttempt) -> ExamSummaryOut:
     )
 
 
-def to_out(attempt: ExamAttempt, content: ContentStore) -> ExamOut:
+def to_out(attempt: ExamAttempt, content: ContentStore, notes: dict[int, Explanation] | None = None) -> ExamOut:
+    """`notes` (explanations) are only shown once the exam is completed."""
     completed = attempt.status == STATUS_COMPLETED
+    notes = notes if completed and notes else {}
     items = []
     for answer in attempt.answers:
         q = content.questions[answer.question_id]
+        note = notes.get(q.id)
         items.append(
             ExamItemOut(
                 position=answer.position,
@@ -166,6 +182,8 @@ def to_out(attempt: ExamAttempt, content: ContentStore) -> ExamOut:
                 selected=answer.selected,
                 answer=q.answer if completed else None,
                 is_correct=answer.is_correct if completed else None,
+                explanation=note.text if note else None,
+                law_ref=note.law_ref if note else None,
             )
         )
     return ExamOut(

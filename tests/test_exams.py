@@ -118,7 +118,14 @@ async def test_dashboard_tracks_lessons_and_practice(client, content, db):
     q = practice["questions"][0]
     wrong = (q["answer"] + 1) % 4
     feedback = (await client.post("/api/v1/practice/answers", json={"question_id": q["id"], "selected": wrong})).json()
-    assert feedback == {"question_id": q["id"], "selected": wrong, "answer": q["answer"], "correct": False}
+    assert feedback == {
+        "question_id": q["id"],
+        "selected": wrong,
+        "answer": q["answer"],
+        "correct": False,
+        "explanation": q["explanation"],
+        "law_ref": q["law_ref"],
+    }
 
     mistakes = (await client.get("/api/v1/practice/questions", params={"mode": "mistakes"})).json()
     assert [m["id"] for m in mistakes["questions"]] == [q["id"]]

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -15,10 +15,18 @@ class UserOut(ORMModel):
     phone: str | None
     plan: str
     created_at: datetime
+    exam_date: date | None
+    daily_goal: int
+    reminders: bool
 
 
 class UserUpdate(BaseModel):
+    """Partial update: only the fields sent are changed."""
+
     phone: str | None = Field(default=None, max_length=32, pattern=r"^\+?[0-9 ]{9,20}$")
+    exam_date: date | None = None
+    daily_goal: int = Field(default=20, ge=5, le=100)
+    reminders: bool = False
 
 
 class GoogleLoginIn(BaseModel):
@@ -28,3 +36,4 @@ class GoogleLoginIn(BaseModel):
 class AuthConfigOut(BaseModel):
     google_client_id: str | None
     paywall_enabled: bool
+    reminders_available: bool
