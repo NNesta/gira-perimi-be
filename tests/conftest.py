@@ -33,6 +33,14 @@ def fake_verify_oauth2_token(credential, _request, audience=None, clock_skew_in_
     return json.loads(base64.urlsafe_b64decode(credential.removeprefix("test.")))
 
 
+@pytest.fixture(autouse=True)
+def isolated_settings(monkeypatch):
+    """Ignore outbound-network settings from a developer's .env: no real proxy or SMTP server in tests."""
+    monkeypatch.setattr(settings, "OUTBOUND_PROXY", "")
+    for name in ("SMTP_HOST", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM"):
+        monkeypatch.setattr(settings, name, "")  # reminders off unless a test switches them on
+
+
 @pytest.fixture
 async def session_factory(tmp_path) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     engine = create_engine(f"sqlite+aiosqlite:///{tmp_path / 'test.db'}")
@@ -60,8 +68,6 @@ async def client(session_factory, monkeypatch) -> AsyncIterator[AsyncClient]:
             yield session
 
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
-    monkeypatch.setattr(settings, "SMTP_HOST", "")  # reminders off unless a test switches them on
-    monkeypatch.setattr(settings, "SMTP_FROM", "")
     monkeypatch.setattr(id_token, "verify_oauth2_token", fake_verify_oauth2_token)
     app.dependency_overrides[get_db] = override_db
     login_limiter._hits.clear()

@@ -45,7 +45,10 @@ async def test_reminders_reach_opted_in_learners_below_their_goal_once_a_day(cli
     assert "ibibazo 0 kuri 10" in body and "Hasigaye iminsi 5" in body
     assert "https://tsindaneza.example/ikibaho" in body and "https://tsindaneza.example/reka-kwibutswa?token=" in body
     assert message["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
-    assert message.get_body(("html",)) is not None
+    assert message["Date"] and message["Message-ID"].endswith("@example.com>")
+    page = message.get_body(("html",)).get_content()
+    assert "Intego y’uyu munsi" in page and "Mu minsi 5" in page and 'width="0%"' not in page
+    assert "https://tsindaneza.example/reka-kwibutswa?token=" in page and "/icons/icon-192.png" in page
 
     assert await reminders.send_reminders(db) == []  # once a day
 
