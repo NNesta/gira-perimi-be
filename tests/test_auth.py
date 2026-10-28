@@ -88,7 +88,12 @@ async def test_google_login_without_client_id_is_unavailable(client, monkeypatch
     response = await google_sign_in(client, **google_claims())
     assert response.status_code == 503
     config = (await client.get("/api/v1/auth/config")).json()
-    assert config == {"google_client_id": None, "paywall_enabled": False, "reminders_available": False}
+    assert config == {
+        "google_client_id": None,
+        "paywall_enabled": False,
+        "reminders_available": False,
+        "push_public_key": None,
+    }
 
 
 async def test_config_exposes_the_client_id(client):

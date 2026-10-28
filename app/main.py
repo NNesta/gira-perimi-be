@@ -8,10 +8,13 @@ from starlette.types import Scope
 
 from app.api.v1 import api_router
 from app.core.config import settings
+from app.core.monitoring import init_sentry
 from app.db.session import engine
 from app.services.content import get_content
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+init_sentry("api")  # before the app is built, so Sentry's FastAPI integration wraps it
 
 
 class CachedStaticFiles(StaticFiles):

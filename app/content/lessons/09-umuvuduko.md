@@ -22,6 +22,8 @@ Umuyobozi wese agomba buri gihe kuyobora ikinyabiziga cye yitonze, akaringaniza 
 
 Agomba **gushobora guhagarika ikinyabiziga cye** mu ntera ageza amaso, n’imbere y’inkomyi yose itunguranye.
 
+::diagram intera-yo-guhagarara
+
 ### Igihe ugomba kugabanya umuvuduko
 
 Ugabanya umuvuduko, ndetse byaba ngombwa ugahagarara:

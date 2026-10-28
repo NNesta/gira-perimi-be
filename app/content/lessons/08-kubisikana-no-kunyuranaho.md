@@ -52,6 +52,8 @@ Ariko unyura **iburyo** iyo umuyobozi ugiye kunyurwaho amaze kwerekana ko ashaka
 - Umuyobozi ubonye ko hari ushaka kumunyuraho **yegera iburyo** kandi **ntiyongera umuvuduko**.
 - Umuyobozi w’ikinyabiziga kirengeje **metero 8** z’uburebure agaragaza, akoresheje ikimenyetso cyabigenewe, ko yabonye ikimenyetso cy’ushaka kumunyuraho.
 
+::diagram kunyuranaho
+
 ## Aho kunyuranaho bibujijwe
 
 - Ahari **igihu** cyangwa hafi y’**impinga y’umupando** n’ahandi hatabona neza.

@@ -56,6 +56,26 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
 
+    # Phone notifications (Web Push): free, sent through the browser's own push service. Generate the key pair once
+    # with `python -m app.cli vapid-keys`; leave them empty to switch phone notifications off. VAPID_SUBJECT is a
+    # contact for the push services ("mailto:you@example.com" or the site's https address).
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_SUBJECT: str = ""
+
+    # Daily backups of the SQLite database (`python -m app.cli daily`, or `backup` on its own): gzip copies kept in
+    # BACKUP_DIR. Every copy from the last BACKUP_KEEP_DAYS days is kept, plus the first copy of each of the last
+    # BACKUP_KEEP_MONTHS months.
+    BACKUP_DIR: Path = BASE_DIR / "backups"
+    BACKUP_KEEP_DAYS: int = 14
+    BACKUP_KEEP_MONTHS: int = 6
+
+    # Error alerts with Sentry (sentry.io, free plan): the project's DSN, or empty to switch alerts off.
+    SENTRY_DSN: str = ""
+
+    # "Watsinze ikizamini?": the real-exam pass rate is published once this many learners have answered.
+    OUTCOME_MIN_ANSWERS: int = 10
+
     @model_validator(mode="after")
     def _check_production(self) -> "Settings":
         if self.ENVIRONMENT == "production":
@@ -66,7 +86,17 @@ class Settings(BaseSettings):
 
     @property
     def reminders_available(self) -> bool:
+        """Reminder emails can be sent."""
         return bool(self.SMTP_HOST and self.SMTP_FROM)
+
+    @property
+    def push_available(self) -> bool:
+        """Phone notifications can be sent."""
+        return bool(self.VAPID_PUBLIC_KEY and self.VAPID_PRIVATE_KEY)
+
+    @property
+    def vapid_subject(self) -> str:
+        return self.VAPID_SUBJECT or self.SITE_URL
 
 
 @lru_cache

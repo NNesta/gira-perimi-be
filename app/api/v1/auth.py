@@ -26,6 +26,7 @@ async def auth_config() -> AuthConfigOut:
         google_client_id=settings.GOOGLE_CLIENT_ID or None,
         paywall_enabled=settings.PAYWALL_ENABLED,
         reminders_available=settings.reminders_available,
+        push_public_key=settings.VAPID_PUBLIC_KEY if settings.push_available else None,
     )
 
 

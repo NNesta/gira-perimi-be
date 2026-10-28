@@ -3,6 +3,8 @@
 import hashlib
 import json
 import random
+import re
+import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -80,6 +82,21 @@ TOPICS: list[dict] = [
 ]
 TOPIC_IDS = {t["id"] for t in TOPICS}
 
+# Lesson drawings the frontend knows (`::diagram name`), checked when lessons load so a typo fails loudly.
+DIAGRAMS = {"imirongo", "kunyuranaho", "intera-yo-guhagarara", "aho-guhagarara"}
+
+_APOSTROPHES = str.maketrans("", "", "'’‘ʼ`´")
+
+
+def normalize(text: str) -> str:
+    """Search form of a text: lower case, no accents or apostrophes, other punctuation as spaces.
+
+    "Y’umuhanda!" and "y'umuhanda" both become "yumuhanda", so learners can type either.
+    """
+    text = unicodedata.normalize("NFKD", text.lower())
+    text = "".join(c for c in text if not unicodedata.combining(c)).translate(_APOSTROPHES)
+    return " ".join(re.sub(r"[\W_]+", " ", text).split())
+
 
 @dataclass(frozen=True, slots=True)
 class Option:
@@ -134,6 +151,16 @@ class ContentStore:
         if unknown:
             raise ValueError(f"explanations for unknown questions: {sorted(unknown)[:5]}")
         self.active_ids: list[int] = [q.id for q in self.questions.values() if q.active]
+        # Question, answers and default explanation, normalised once for search.
+        self._search_index: dict[int, tuple[str, str, str]] = {
+            qid: (
+                normalize(q.text),
+                normalize(" ".join(o.text for o in q.options)),
+                normalize(q.explanation or ""),
+            )
+            for qid in self.active_ids
+            if (q := self.questions[qid])
+        }
         self.ids_by_topic: dict[str, list[int]] = {t: [] for t in TOPIC_IDS}
         for qid in self.active_ids:
             self.ids_by_topic[self.questions[qid].topic].append(qid)
@@ -174,6 +201,8 @@ class ContentStore:
                     block["signs"] = [
                         {"id": s["id"], "code": s["code"], "name": s["name"], "image": s["image"]} for s in resolved
                     ]
+                elif block["type"] == "diagram" and block["name"] not in DIAGRAMS:
+                    raise ValueError(f"lesson {lesson['slug']} references unknown diagram {block['name']}")
                 elif block["type"] == "callout":
                     walk(block["blocks"])
 
@@ -207,6 +236,30 @@ class ContentStore:
     def sample(self, ids: list[int], count: int, rng: random.Random | None = None) -> list[int]:
         rng = rng or random.SystemRandom()
         return rng.sample(ids, min(count, len(ids)))
+
+    def search(self, query: str, topic: str | None = None) -> list[int]:
+        """Active questions containing every word of `query`, best first.
+
+        A word found in the question counts most, then in the answers, then in the explanation; the whole phrase in
+        the question adds more. A number on its own also finds the question with that number in the booklet.
+        """
+        words = normalize(query).split()
+        if not words:
+            return []
+        phrase = " ".join(words)
+        scored: list[tuple[int, int]] = []
+        for qid, (text, options, note) in self._search_index.items():
+            question = self.questions[qid]
+            if topic and question.topic != topic:
+                continue
+            score = 100 if phrase == question.ref else 0
+            if all(w in text or w in options or w in note for w in words):
+                score += sum(3 if w in text else 2 if w in options else 1 for w in words)
+                score += 5 if phrase in text else 0
+            if score:
+                scored.append((score, qid))
+        scored.sort(key=lambda item: (-item[0], int(self.questions[item[1]].ref or 0)))
+        return [qid for _, qid in scored]
 
     def topic_list(self) -> list[dict]:
         return [

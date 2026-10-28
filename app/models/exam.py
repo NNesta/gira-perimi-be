@@ -28,6 +28,8 @@ class ExamAttempt(Base):
     auto_submitted: Mapped[bool] = mapped_column(Boolean, default=False)
     total: Mapped[int] = mapped_column(Integer)
     score: Mapped[int | None] = mapped_column(Integer)
+    # Short public code for the result card a learner chose to share ("Nabonye 19/20"); null until they do.
+    share_code: Mapped[str | None] = mapped_column(String(16), unique=True)
 
     user: Mapped["User"] = relationship(back_populates="exams")
     answers: Mapped[list["ExamAnswer"]] = relationship(

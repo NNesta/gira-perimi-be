@@ -6,6 +6,7 @@ Supported syntax (kept deliberately small):
   - item / 1. item    lists                     | a | b |   tables (first row = header)
   > [!tone] Title     callout (tip, warning, info, law, key); body may hold paragraphs and lists
   ::signs A.1a B.1    gallery of road signs (codes resolved by the content store)
+  ::diagram name      a drawing the frontend provides (names listed in content.DIAGRAMS)
   **bold**            inline emphasis (left to the renderer)
 """
 
@@ -39,6 +40,9 @@ def parse_blocks(lines: list[str]) -> list[dict]:
             i += 1
         elif line.startswith("::signs"):
             blocks.append({"type": "signs", "codes": line.split()[1:]})
+            i += 1
+        elif line.startswith("::diagram"):
+            blocks.append({"type": "diagram", "name": line.split()[1]})
             i += 1
         elif line.startswith(">"):
             chunk: list[str] = []

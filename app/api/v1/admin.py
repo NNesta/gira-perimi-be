@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.deps import DB, Content, CurrentAdmin
 from app.core.ratelimit import SlidingWindowLimiter
 from app.core.security import ADMIN_COOKIE, clear_session_cookie, create_token, set_session_cookie
-from app.models import Admin, User
+from app.models import Admin, ExamOutcome, User
 from app.schemas.admin import (
     AdminLoginIn,
     AdminOut,
@@ -23,6 +23,7 @@ from app.schemas.admin import (
     UserSort,
 )
 from app.schemas.common import Page
+from app.schemas.outcome import AdminTestimonialOut, TestimonialStatus, TestimonialUpdate
 from app.services import admin as admin_service
 from app.services import auth as auth_service
 from app.services.content import TOPIC_IDS, Question
@@ -160,3 +161,20 @@ async def reset_explanation(question_id: int, _: CurrentAdmin, db: DB, content: 
     question = _question(content, question_id)
     await admin_service.reset_explanation(db, question)
     return await admin_service.question_out(db, content, question)
+
+
+@router.get("/testimonials")
+async def testimonials(
+    _: CurrentAdmin, db: DB, status_filter: TestimonialStatus | None = Query(None, alias="status")
+) -> list[AdminTestimonialOut]:
+    """ "Ubuhamya": what learners wrote after passing the real exam. Only approved, consented ones reach the site."""
+    return await admin_service.list_testimonials(db, status_filter)
+
+
+@router.patch("/testimonials/{outcome_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def moderate_testimonial(outcome_id: uuid.UUID, body: TestimonialUpdate, _: CurrentAdmin, db: DB) -> None:
+    outcome = await db.get(ExamOutcome, outcome_id)
+    if outcome is None or not outcome.testimonial:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ubu buhamya ntibubonetse.")
+    outcome.testimonial_status = body.status
+    await db.commit()

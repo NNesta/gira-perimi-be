@@ -23,6 +23,8 @@ Ni ibimenyetso bishyirwa mu muhanda cyangwa ku nkengero z’utuyira tw’abanyam
 - **Uduce tugufi kandi twegeranye cyane**: tuvuga ko umurongo udacagaguye wegereje.
 - **Umurongo udacagaguye n’ucagaguye bibangikanye**: umuyobozi yita gusa ku murongo umwegereye. Uwarenze iyo mirongo anyura ku kindi kinyabiziga ashobora kongera kuyirenga asubira mu mwanya we.
 
+::diagram imirongo
+
 > [!tip] Inama
 > Uri ku ruhande rw’umurongo ucagaguye, ushobora kunyuranaho niba nta kindi kibibuza. Uri ku ruhande rw’umurongo udacagaguye, ntukawurenge.
 

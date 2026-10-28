@@ -1,7 +1,8 @@
-"""Opt-in daily reminder emails for learners who have not reached today's goal.
+"""Opt-in daily reminders for learners who have not reached today's goal: email, phone notifications, or both.
 
 Run once a day (e.g. 18:00 Kigali) by a scheduler: `python -m app.cli send-reminders`. A learner gets at most one
-reminder per day, only while `reminders` is on; every email carries a one-click unsubscribe link.
+reminder per day: by email while `reminders` is on (every email carries a one-click unsubscribe link), and on each
+device where they switched phone notifications on.
 """
 
 import html
@@ -19,8 +20,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.security import create_token
 from app.db.base import utcnow
-from app.models import User
-from app.services import progress, review
+from app.models import PushSubscription, User
+from app.services import progress, push, review
 from app.services.dates import day_start, local_day
 
 logger = logging.getLogger(__name__)
@@ -52,13 +53,20 @@ def unsubscribe_token(user: User) -> str:
 
 
 async def pending(db: AsyncSession, now: datetime) -> list[Reminder]:
-    """Learners with reminders on, not yet reminded today, and below their daily goal."""
+    """Learners with a reminder channel on, not yet reminded today, and below their daily goal."""
     today = local_day(now)
+    channels = []
+    if settings.reminders_available:
+        channels.append(User.reminders)
+    if settings.push_available:
+        channels.append(User.id.in_(select(PushSubscription.user_id)))
+    if not channels:
+        return []
     users = list(
         await db.scalars(
             select(User).where(
                 User.is_active,
-                User.reminders,
+                or_(*channels),
                 or_(User.last_reminded_on.is_(None), User.last_reminded_on < today),
             )
         )
@@ -217,14 +225,8 @@ def _html(reminder: Reminder, *, greeting: str, lead: str, preheader: str, site:
 </html>"""
 
 
-def compose(reminder: Reminder) -> EmailMessage:
-    user = reminder.user
-    site = settings.SITE_URL.rstrip("/")
-    token = unsubscribe_token(user)
-    dashboard_url = f"{site}/ikibaho"
-    unsubscribe_url = f"{site}/reka-kwibutswa?token={token}"
-
-    lines = [f"Uyu munsi umaze gusubiza ibibazo {reminder.answered} kuri {user.daily_goal} wihaye."]
+def _lines(reminder: Reminder) -> list[str]:
+    lines = [f"Uyu munsi umaze gusubiza ibibazo {reminder.answered} kuri {reminder.user.daily_goal} wihaye."]
     if reminder.review_due:
         lines.append(f"Ufite ibintu {reminder.review_due} byo gusubiramo uyu munsi.")
     if reminder.streak:
@@ -235,13 +237,32 @@ def compose(reminder: Reminder) -> EmailMessage:
             if reminder.days_to_exam == 0
             else f"Hasigaye {_days(reminder.days_to_exam)} ngo ukore ikizamini."
         )
+    return lines
 
+
+def _subject(reminder: Reminder) -> str:
     if reminder.days_to_exam == 0:
-        subject = "Amahirwe masa ku kizamini cy’uyu munsi! 🍀"
-    elif reminder.streak >= 2:
-        subject = f"Ntucikeho! Umaze {_days(reminder.streak)} wiga 🔥"
-    else:
-        subject = "Iminota 10 y’imyitozo uyu munsi? 🚦"
+        return "Amahirwe masa ku kizamini cy’uyu munsi! 🍀"
+    if reminder.streak >= 2:
+        return f"Ntucikeho! Umaze {_days(reminder.streak)} wiga 🔥"
+    return "Iminota 10 y’imyitozo uyu munsi? 🚦"
+
+
+def notification(reminder: Reminder) -> dict:
+    """The phone notification: the email's subject as the title and today's progress as the text."""
+    lines = _lines(reminder)
+    return {"title": _subject(reminder), "body": " ".join(lines[:2]), "url": "/ikibaho", "tag": "reminder"}
+
+
+def compose(reminder: Reminder) -> EmailMessage:
+    user = reminder.user
+    site = settings.SITE_URL.rstrip("/")
+    token = unsubscribe_token(user)
+    dashboard_url = f"{site}/ikibaho"
+    unsubscribe_url = f"{site}/reka-kwibutswa?token={token}"
+    lines = _lines(reminder)
+    subject = _subject(reminder)
+
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = settings.SMTP_FROM
@@ -292,20 +313,31 @@ def _deliver(messages: list[EmailMessage]) -> list[bool]:
 
 
 async def send_reminders(db: AsyncSession, now: datetime | None = None, dry_run: bool = False) -> list[str]:
-    """Sends today's reminders and returns the addresses reached (or that would be, with dry_run)."""
-    if not settings.reminders_available:
-        raise RuntimeError("Reminders are switched off: set SMTP_HOST and SMTP_FROM.")
+    """Sends today's reminders and returns the addresses of the learners reached (or that would be, with dry_run)."""
+    if not (settings.reminders_available or settings.push_available):
+        raise RuntimeError("Reminders are switched off: set SMTP_HOST and SMTP_FROM, or the VAPID keys.")
     now = now or utcnow()
     reminders = await pending(db, now)
     if dry_run or not reminders:
         return [r.user.email for r in reminders]
-    messages = [compose(r) for r in reminders]
-    sent = await anyio.to_thread.run_sync(_deliver, messages)
+
+    reached: set = set()
+    by_email = [r for r in reminders if settings.reminders_available and r.user.reminders]
+    if by_email:
+        try:
+            sent = await anyio.to_thread.run_sync(_deliver, [compose(r) for r in by_email])
+        except (OSError, smtplib.SMTPException) as exc:  # mail server unreachable: phones can still be reached
+            logger.error("Reminder emails not sent: %s", exc)
+            sent = [False] * len(by_email)
+        reached |= {r.user.id for r, ok in zip(by_email, sent, strict=True) if ok}
+    if settings.push_available:
+        for reminder in reminders:
+            if await push.notify(db, reminder.user.id, notification(reminder)):
+                reached.add(reminder.user.id)
+
     today: date = local_day(now)
-    reached = []
-    for reminder, ok in zip(reminders, sent, strict=True):
-        if ok:
+    for reminder in reminders:
+        if reminder.user.id in reached:
             reminder.user.last_reminded_on = today
-            reached.append(reminder.user.email)
     await db.commit()
-    return reached
+    return [r.user.email for r in reminders if r.user.id in reached]

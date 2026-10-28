@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.exam import ExamAttempt
     from app.models.practice import PracticeAnswer
     from app.models.progress import LessonProgress
+    from app.models.push import PushSubscription
 
 
 class User(Base):
@@ -38,12 +39,21 @@ class User(Base):
     daily_goal: Mapped[int] = mapped_column(SmallInteger, default=20, server_default=text("20"))
     reminders: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     last_reminded_on: Mapped[date | None] = mapped_column(Date)
+    # Set when the learner finishes or skips the first-time welcome (exam date, daily goal, placement quiz).
+    onboarded_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
 
     exams: Mapped[list["ExamAttempt"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", passive_deletes=True
     )
     practice_answers: Mapped[list["PracticeAnswer"]] = relationship(cascade="all, delete-orphan", passive_deletes=True)
     lessons: Mapped[list["LessonProgress"]] = relationship(cascade="all, delete-orphan", passive_deletes=True)
+    push_subscriptions: Mapped[list["PushSubscription"]] = relationship(
+        cascade="all, delete-orphan", passive_deletes=True
+    )
+
+    @property
+    def onboarded(self) -> bool:
+        return self.onboarded_at is not None
 
     @property
     def has_premium(self) -> bool:

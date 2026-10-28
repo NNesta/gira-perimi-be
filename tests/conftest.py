@@ -35,10 +35,18 @@ def fake_verify_oauth2_token(credential, _request, audience=None, clock_skew_in_
 
 @pytest.fixture(autouse=True)
 def isolated_settings(monkeypatch):
-    """Ignore outbound-network settings from a developer's .env: no real proxy or SMTP server in tests."""
+    """Ignore outbound-network settings from a developer's .env: no real proxy, SMTP, push keys or Sentry in tests."""
     monkeypatch.setattr(settings, "OUTBOUND_PROXY", "")
-    for name in ("SMTP_HOST", "SMTP_USERNAME", "SMTP_PASSWORD", "SMTP_FROM"):
-        monkeypatch.setattr(settings, name, "")  # reminders off unless a test switches them on
+    for name in (
+        "SMTP_HOST",
+        "SMTP_USERNAME",
+        "SMTP_PASSWORD",
+        "SMTP_FROM",
+        "VAPID_PUBLIC_KEY",
+        "VAPID_PRIVATE_KEY",
+        "SENTRY_DSN",
+    ):
+        monkeypatch.setattr(settings, name, "")  # reminders and alerts off unless a test switches them on
 
 
 @pytest.fixture

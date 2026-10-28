@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.core.deps import DB, Content, OptionalUser, has_access
+from app.core.deps import DB, Content, OptionalUser, PaidUser, has_access
 from app.models import LessonProgress
 from app.schemas.content import (
     ExamRulesOut,
@@ -10,15 +10,19 @@ from app.schemas.content import (
     LessonOut,
     LessonSummaryOut,
     OverviewOut,
+    QuestionSearchOut,
     QuestionWithAnswerOut,
     SignCategoryOut,
     SignOut,
     SignsOut,
     TopicOut,
 )
+from app.services.content import TOPIC_IDS
 from app.services.practice import questions_out
 
 router = APIRouter(tags=["content"])
+
+SEARCH_LIMIT = 30
 
 
 async def _completed_slugs(db: DB, user: OptionalUser) -> set[str]:
@@ -42,6 +46,21 @@ async def overview(content: Content) -> OverviewOut:
             readiness_min_average=settings.READINESS_MIN_AVERAGE,
         ),
     )
+
+
+@router.get("/questions/search")
+async def search_questions(
+    db: DB,
+    _user: PaidUser,
+    content: Content,
+    q: str = Query(min_length=1, max_length=100),
+    topic: str | None = None,
+) -> QuestionSearchOut:
+    """Searches the whole bank: question, answers and explanation. Signed-in learners only, as results show answers."""
+    if topic is not None and topic not in TOPIC_IDS:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Iyo nsanganyamatsiko ntibaho.")
+    ids = content.search(q, topic)
+    return QuestionSearchOut(total=len(ids), items=await questions_out(db, content, ids[:SEARCH_LIMIT]))
 
 
 @router.get("/topics")

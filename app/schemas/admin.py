@@ -51,6 +51,10 @@ class PlatformStatsOut(BaseModel):
     average_score: float | None
     pass_rate: float | None
     practice_answers: int
+    # Real exam, as learners reported it ("Watsinze ikizamini?"), and testimonials waiting to be read.
+    outcomes_answered: int = 0
+    outcomes_passed: int = 0
+    testimonials_pending: int = 0
     daily: list[DailyPointOut]
     score_distribution: list[ScoreBucketOut]
     topics: list[TopicDifficultyOut]

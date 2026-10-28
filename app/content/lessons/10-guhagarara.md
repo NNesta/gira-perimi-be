@@ -51,6 +51,8 @@ Gishobora kurangwa na **mpandeshatu iburira**, n’**amatara ndangacyerekezo yos
 - aho kunyura ku kinyabiziga cyawe byatuma abandi barenga umurongo udacagaguye;
 - ahari ibyapa bibibuza.
 
+::diagram aho-guhagarara
+
 ::signs C.18 C.19 C.20a C.20b
 
 ## Aho guhagarara umwanya munini bibujijwe

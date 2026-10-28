@@ -4,10 +4,11 @@ from datetime import timedelta
 
 from sqlalchemy import Float, case, cast, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.db.base import utcnow
-from app.models import Admin, ExamAnswer, ExamAttempt, PracticeAnswer, QuestionExplanation, User
+from app.models import Admin, ExamAnswer, ExamAttempt, ExamOutcome, PracticeAnswer, QuestionExplanation, User
 from app.models.exam import STATUS_COMPLETED
 from app.schemas.admin import (
     AdminQuestionOut,
@@ -27,8 +28,9 @@ from app.schemas.admin import (
 )
 from app.schemas.common import Page
 from app.schemas.content import OptionOut
+from app.schemas.outcome import AdminTestimonialOut
 from app.services import exams as exam_service
-from app.services import explanations, progress, review
+from app.services import explanations, outcomes, progress, review
 from app.services.content import TOPICS, ContentStore, Question
 from app.services.dates import KIGALI
 from app.services.practice import answer_history
@@ -118,6 +120,7 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
             topic_totals[topic][0] += n
             topic_totals[topic][1] += ok
 
+    outcome_counts = await outcomes.pass_counts(db)
     return PlatformStatsOut(
         users_total=await _count(db, User),
         users_new_7d=await _count(db, User, User.created_at >= week_ago),
@@ -128,6 +131,11 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
         average_score=round(average, 2) if average is not None else None,
         pass_rate=round((passed or 0) / total_exams, 4) if total_exams else None,
         practice_answers=await _count(db, PracticeAnswer),
+        outcomes_answered=outcome_counts[0],
+        outcomes_passed=outcome_counts[1],
+        testimonials_pending=await _count(
+            db, ExamOutcome, ExamOutcome.testimonial.is_not(None), ExamOutcome.testimonial_status == "pending"
+        ),
         daily=daily,
         score_distribution=distribution,
         topics=[
@@ -349,3 +357,30 @@ async def reset_explanation(db: AsyncSession, question: Question) -> None:
     if row is not None:
         await db.delete(row)
         await db.commit()
+
+
+async def list_testimonials(db: AsyncSession, status: str | None) -> list[AdminTestimonialOut]:
+    """Learners' words about the real exam, newest first; `status` filters pending / approved / hidden."""
+    query = (
+        select(ExamOutcome)
+        .options(selectinload(ExamOutcome.user))
+        .where(ExamOutcome.testimonial.is_not(None))
+        .order_by(ExamOutcome.updated_at.desc())
+    )
+    if status:
+        query = query.where(ExamOutcome.testimonial_status == status)
+    return [
+        AdminTestimonialOut(
+            id=o.id,
+            user_id=o.user_id,
+            name=o.user.name,
+            email=o.user.email,
+            exam_date=o.exam_date,
+            result=o.result,
+            text=o.testimonial or "",
+            public=o.testimonial_public,
+            status=o.testimonial_status,
+            created_at=o.updated_at,
+        )
+        for o in await db.scalars(query)
+    ]

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
@@ -36,6 +36,20 @@ class ExamOut(BaseModel):
     passed: bool | None
     answered: int
     items: list[ExamItemOut]
+
+
+class ShareCodeOut(BaseModel):
+    code: str
+
+
+class SharedResultOut(BaseModel):
+    """What anyone with the link sees: the learner's first name and score, nothing else."""
+
+    name: str
+    score: int
+    total: int
+    passed: bool
+    day: date
 
 
 class ExamSummaryOut(BaseModel):

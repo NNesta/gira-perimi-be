@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.db.base import utcnow
 from app.models import ExamAnswer, ExamAttempt, LessonProgress, PracticeAnswer, User
 from app.models.exam import STATUS_COMPLETED
+from app.models.outcome import RESULT_PASSED
 from app.schemas.progress import (
     ActivityDayOut,
     DashboardOut,
@@ -24,7 +25,7 @@ from app.schemas.progress import (
 )
 from app.schemas.user import UserOut
 from app.services import exams as exam_service
-from app.services import review
+from app.services import outcomes, review
 from app.services.content import TOPICS, ContentStore
 from app.services.dates import day_start, local_day
 from app.services.practice import answer_history
@@ -109,6 +110,19 @@ def streak(days: set[date], today: date) -> int:
         count += 1
         cursor -= timedelta(days=1)
     return count
+
+
+def longest_streak(days: set[date]) -> int:
+    """The longest run of consecutive active days ever."""
+    best = 0
+    for day in days:
+        if day - timedelta(days=1) in days:
+            continue  # not the first day of a run
+        length = 1
+        while day + timedelta(days=length) in days:
+            length += 1
+        best = max(best, length)
+    return best
 
 
 async def answered_since(db: AsyncSession, since: datetime, user_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, int]:
@@ -257,6 +271,9 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
     readiness_out = readiness(scores)
     plan = study_plan(user, today, lessons_out.total - lessons_out.completed, readiness_out.exams_remaining)
     answered_today = (await answered_since(db, day_start(today), [user.id])).get(user.id, 0)
+    outcome = await outcomes.for_date(db, user.id, user.exam_date) if user.exam_date else None
+    if outcome is not None and outcome.result == RESULT_PASSED:
+        plan.pace = "succeeded"
 
     recent = sorted(exams, key=lambda e: e.submitted_at, reverse=True)[:5]
     return DashboardOut(
@@ -295,4 +312,5 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
         ),
         plan=plan,
         review=await review.summary(db, user.id),
+        outcome_question=None if outcome else await outcomes.question_due(db, user, today),
     )

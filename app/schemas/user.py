@@ -18,6 +18,7 @@ class UserOut(ORMModel):
     exam_date: date | None
     daily_goal: int
     reminders: bool
+    onboarded: bool
 
 
 class UserUpdate(BaseModel):
@@ -27,6 +28,7 @@ class UserUpdate(BaseModel):
     exam_date: date | None = None
     daily_goal: int = Field(default=20, ge=5, le=100)
     reminders: bool = False
+    onboarded: bool = False
 
 
 class GoogleLoginIn(BaseModel):
@@ -37,3 +39,5 @@ class AuthConfigOut(BaseModel):
     google_client_id: str | None
     paywall_enabled: bool
     reminders_available: bool
+    # VAPID public key for PushManager.subscribe(); null when phone notifications are switched off.
+    push_public_key: str | None = None

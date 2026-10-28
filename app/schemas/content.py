@@ -106,6 +106,11 @@ class ExamRulesOut(BaseModel):
     readiness_min_average: float
 
 
+class QuestionSearchOut(BaseModel):
+    total: int
+    items: list[QuestionWithAnswerOut]
+
+
 class OverviewOut(BaseModel):
     questions: int
     lessons: int

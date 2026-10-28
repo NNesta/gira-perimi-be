@@ -14,7 +14,9 @@ dependencies = [
     "google-auth>=2.62.0",
     "pydantic-settings>=2.16.1",
     "pyjwt>=2.15.1",
+    "pywebpush>=2.5.0",
     "requests>=2.34.2",
+    "sentry-sdk[fastapi]>=2.40",
     "sqlalchemy[asyncio]>=2.1.6",
 ]
 

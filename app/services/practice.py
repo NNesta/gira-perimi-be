@@ -1,3 +1,5 @@
+import random
+from collections import Counter
 from datetime import timedelta
 
 from sqlalchemy import select
@@ -7,9 +9,19 @@ from app.db.base import utcnow
 from app.models import ExamAnswer, ExamAttempt, PracticeAnswer, User
 from app.models.exam import STATUS_COMPLETED
 from app.schemas.content import OptionOut, QuestionWithAnswerOut
-from app.schemas.practice import OfflineAnswerIn, OfflineSyncOut, PracticeMode
+from app.schemas.practice import (
+    MistakeCounts,
+    MistakeOut,
+    MistakesOut,
+    MistakeStatus,
+    OfflineAnswerIn,
+    OfflineSyncOut,
+    PlacementOut,
+    PracticeAnswerIn,
+    PracticeMode,
+)
 from app.services import explanations, review
-from app.services.content import ContentStore, Question
+from app.services.content import TOPICS, ContentStore, Question
 from app.services.explanations import Explanation
 
 # Offline answers older than this are not accepted (they would distort streaks and daily goals).
@@ -54,6 +66,68 @@ async def answer_history(db: AsyncSession, user: User) -> list[tuple[int, bool, 
     return rows
 
 
+async def mistakes(
+    db: AsyncSession,
+    user: User,
+    content: ContentStore,
+    topic: str | None,
+    status: MistakeStatus,
+    page: int,
+    page_size: int,
+) -> MistakesOut:
+    """Every question the learner has got wrong, in practice or a finished exam, the most recent mistake first."""
+    practice = await db.execute(
+        select(
+            PracticeAnswer.question_id, PracticeAnswer.selected, PracticeAnswer.is_correct, PracticeAnswer.answered_at
+        ).where(PracticeAnswer.user_id == user.id)
+    )
+    exams = await db.execute(
+        select(ExamAnswer.question_id, ExamAnswer.selected, ExamAnswer.is_correct, ExamAttempt.submitted_at)
+        .join(ExamAttempt, ExamAnswer.attempt_id == ExamAttempt.id)
+        .where(ExamAttempt.user_id == user.id, ExamAttempt.status == STATUS_COMPLETED)
+    )
+    rows = sorted((r for r in [*practice.all(), *exams.all()] if r[3] is not None), key=lambda r: r[3])
+
+    stats: dict[int, dict] = {}
+    for qid, selected, correct, at in rows:
+        question = content.questions.get(qid)
+        if question is None or not question.active:
+            continue
+        if not correct:
+            record = stats.setdefault(qid, {"wrong": 0})
+            record.update(wrong=record["wrong"] + 1, at=at, selected=selected, fixed=False)
+        elif qid in stats:
+            stats[qid]["fixed"] = True
+
+    chosen = {qid: s for qid, s in stats.items() if status == "all" or s["fixed"] == (status == "fixed")}
+    topics = Counter(content.questions[qid].topic for qid in chosen)
+    ids = sorted(
+        (qid for qid in chosen if topic is None or content.questions[qid].topic == topic),
+        key=lambda qid: chosen[qid]["at"],
+        reverse=True,
+    )
+    page_ids = ids[(page - 1) * page_size : page * page_size]
+    questions = {q.id: q for q in await questions_out(db, content, page_ids)}
+    fixed = sum(s["fixed"] for s in stats.values())
+    return MistakesOut(
+        total=len(ids),
+        page=page,
+        page_size=page_size,
+        counts=MistakeCounts(all=len(stats), open=len(stats) - fixed, fixed=fixed),
+        topics=dict(topics),
+        items=[
+            MistakeOut(
+                question=questions[qid],
+                wrong_count=chosen[qid]["wrong"],
+                last_wrong_at=chosen[qid]["at"],
+                last_selected=chosen[qid]["selected"],
+                fixed=chosen[qid]["fixed"],
+            )
+            for qid in page_ids
+        ],
+    )
+
+
 async def build_set(
     db: AsyncSession, user: User, content: ContentStore, topic: str | None, mode: PracticeMode, count: int
 ) -> tuple[int, list[QuestionWithAnswerOut]]:
@@ -71,6 +145,45 @@ async def build_set(
             pool = [qid for qid in pool if qid in wrong]
     picked = content.sample(pool, count)
     return len(pool), await questions_out(db, content, picked)
+
+
+async def placement_set(
+    db: AsyncSession, content: ContentStore, rng: random.Random | None = None
+) -> list[QuestionWithAnswerOut]:
+    """The welcome quiz: one random question from each topic, in the order the topics are taught."""
+    rng = rng or random.SystemRandom()
+    picked = [rng.choice(ids) for t in TOPICS if (ids := content.ids_by_topic[t["id"]])]
+    return await questions_out(db, content, picked)
+
+
+async def record_placement(
+    db: AsyncSession, user: User, content: ContentStore, answers: list[PracticeAnswerIn]
+) -> PlacementOut:
+    """Saves the welcome quiz in one go, as practice answers: they count towards topic mastery and review."""
+    now = utcnow()
+    graded: dict[int, bool] = {}
+    for item in answers:
+        question = content.questions.get(item.question_id)
+        if question is None or not question.active:
+            raise KeyError(item.question_id)
+        if item.question_id in graded:
+            continue
+        graded[item.question_id] = correct = item.selected == question.answer
+        db.add(
+            PracticeAnswer(
+                user_id=user.id,
+                question_id=item.question_id,
+                selected=item.selected,
+                is_correct=correct,
+                answered_at=now,
+            )
+        )
+    await review.record_questions(db, user.id, [(qid, ok, now) for qid, ok in graded.items()])
+    await db.commit()
+    weak = {content.questions[qid].topic for qid, ok in graded.items() if not ok}
+    return PlacementOut(
+        correct=sum(graded.values()), total=len(graded), weak_topics=[t["id"] for t in TOPICS if t["id"] in weak]
+    )
 
 
 async def record_answer(

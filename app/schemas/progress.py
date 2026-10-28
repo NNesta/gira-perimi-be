@@ -9,7 +9,8 @@ from app.schemas.user import UserOut
 
 ReadinessStatus = Literal["new", "learning", "almost", "ready"]
 # none: no exam date yet · on_track · tight: more work than days left · today: exam day · passed: the date is behind us
-PlanPace = Literal["none", "on_track", "tight", "today", "passed"]
+# passed: the exam date is behind us; succeeded: the learner told us they passed the real exam.
+PlanPace = Literal["none", "on_track", "tight", "today", "passed", "succeeded"]
 
 
 class ReadinessOut(BaseModel):
@@ -98,3 +99,21 @@ class DashboardOut(BaseModel):
     today: TodayOut
     plan: PlanOut
     review: ReviewSummaryOut
+    # "Watsinze ikizamini?": the past exam date to ask about, or null.
+    outcome_question: date | None = None
+
+
+class BadgeOut(BaseModel):
+    id: str
+    title: str
+    # What it takes, phrased as a goal ("Iga iminsi 7 ikurikiranye").
+    description: str
+    earned: bool
+    current: int
+    target: int
+
+
+class BadgesOut(BaseModel):
+    earned: int
+    total: int
+    items: list[BadgeOut]

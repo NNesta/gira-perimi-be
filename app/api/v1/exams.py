@@ -1,9 +1,12 @@
+import secrets
 import uuid
 
 from fastapi import APIRouter, HTTPException, Path, Query, status
+from sqlalchemy import select
 
 from app.core.deps import DB, Content, PaidUser
-from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut
+from app.models import ExamAttempt
+from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut, ShareCodeOut
 from app.services import exams as exam_service
 from app.services import explanations
 
@@ -77,3 +80,17 @@ async def submit_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Conte
     attempt = await _load(db, user, exam_id)
     await exam_service.submit(db, attempt, content)
     return await _out(db, attempt, content)
+
+
+@router.post("/{exam_id}/share")
+async def share_exam(exam_id: uuid.UUID, db: DB, user: PaidUser) -> ShareCodeOut:
+    """Creates (once) the public code of a passed exam's result card, for sharing on WhatsApp and elsewhere."""
+    attempt = await _load(db, user, exam_id)
+    if not attempt.is_completed or not exam_service.passed(attempt):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Ushobora gusangiza ikizamini watsinze gusa.")
+    while attempt.share_code is None:
+        code = secrets.token_urlsafe(6)
+        if await db.scalar(select(ExamAttempt.id).where(ExamAttempt.share_code == code)) is None:
+            attempt.share_code = code
+    await db.commit()
+    return ShareCodeOut(code=attempt.share_code)
