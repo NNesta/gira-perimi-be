@@ -322,6 +322,10 @@ uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0
 
 Then reload the web app. On PythonAnywhere: `pa website reload --domain <your domain>`.
 
+The API refuses to start on a database that is not at the code's newest migration (`app/db/schema.py`). If the site
+is down after a deploy, the error log says why, e.g. *"The database is at migration 0006, but this code needs 0009"*,
+with the command to run. Databases built without Alembic (tests, the screenshot demo) are not checked.
+
 ## The daily task: backup, then reminders
 
 A free PythonAnywhere account has one *Scheduled task*, so one command does both. Set it to daily at 16:00 UTC
