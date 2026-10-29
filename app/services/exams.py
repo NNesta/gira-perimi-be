@@ -49,6 +49,7 @@ def grade(attempt: ExamAttempt, content: ContentStore, *, auto: bool) -> None:
         score += correct
     now = utcnow()
     attempt.score = score
+    attempt.answered = sum(a.selected is not None for a in attempt.answers)
     attempt.status = STATUS_COMPLETED
     attempt.auto_submitted = auto
     attempt.submitted_at = min(now, attempt.deadline_at)
@@ -74,16 +75,16 @@ async def finalize_expired(db: AsyncSession, attempt: ExamAttempt, content: Cont
 
 
 async def current_attempt(db: AsyncSession, user: User, content: ContentStore) -> ExamAttempt | None:
-    attempt = (
-        await db.scalars(
-            _with_answers()
-            .where(ExamAttempt.user_id == user.id, ExamAttempt.status == STATUS_IN_PROGRESS)
-            .order_by(ExamAttempt.started_at.desc())
-        )
-    ).first()
-    if attempt is None or await finalize_expired(db, attempt, content):
-        return None
-    return attempt
+    """The learner's running exam (the earliest, should there be several). Expired ones are graded on the way."""
+    running = await db.scalars(
+        _with_answers()
+        .where(ExamAttempt.user_id == user.id, ExamAttempt.status == STATUS_IN_PROGRESS)
+        .order_by(ExamAttempt.started_at, ExamAttempt.id)
+    )
+    for attempt in running.all():
+        if not await finalize_expired(db, attempt, content):
+            return attempt
+    return None
 
 
 async def start_exam(db: AsyncSession, user: User, content: ContentStore) -> ExamAttempt:
@@ -102,6 +103,13 @@ async def start_exam(db: AsyncSession, user: User, content: ContentStore) -> Exa
     )
     db.add(attempt)
     await db.commit()
+    # Two requests at once (a double tap, two tabs) can both get this far. Each then resumes the earliest running exam
+    # and the later one drops its own paper, so no forgotten twin is left to be graded 0/20 when its time runs out.
+    first = await current_attempt(db, user, content)
+    if first is not None and first.id != attempt.id:
+        await db.delete(attempt)
+        await db.commit()
+        return first
     return await get_attempt(db, user, attempt.id)
 
 
@@ -119,9 +127,21 @@ async def save_answer(
     return answer
 
 
-async def submit(db: AsyncSession, attempt: ExamAttempt, content: ContentStore) -> ExamAttempt:
+async def submit(
+    db: AsyncSession, attempt: ExamAttempt, content: ContentStore, sheet: dict[int, int] | None = None
+) -> ExamAttempt:
+    """Grades the exam. `sheet` (position -> choice) is the answer sheet as the learner's device last saw it: choices
+    whose own save failed on a poor connection still count, as long as the clock has not run out."""
     if attempt.status == STATUS_IN_PROGRESS:
-        grade(attempt, content, auto=is_expired(attempt))
+        expired = is_expired(attempt)
+        if sheet and not expired:
+            now = utcnow()
+            for answer in attempt.answers:
+                choice = sheet.get(answer.position)
+                if choice is not None and choice != answer.selected:
+                    answer.selected = choice
+                    answer.answered_at = now
+        grade(attempt, content, auto=expired)
         await _schedule_review(db, attempt)
         await db.commit()
     return attempt

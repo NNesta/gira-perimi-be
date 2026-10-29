@@ -11,7 +11,6 @@ import smtplib
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from email.message import EmailMessage
-from email.utils import formatdate, make_msgid, parseaddr
 
 import anyio
 from sqlalchemy import or_, select
@@ -23,20 +22,13 @@ from app.db.base import utcnow
 from app.models import PushSubscription, User
 from app.services import progress, push, review
 from app.services.dates import day_start, local_day
+from app.services.mail import BRAND, CANVAS, INK, INK_SOFT, LINE, MUTED, TRACK, new_message
+from app.services.mail import deliver as _deliver
+from app.services.mail import font as _font
 
 logger = logging.getLogger(__name__)
 
 UNSUBSCRIBE_TOKEN_LIFETIME = timedelta(days=90)
-
-# Email palette, matching the website. Mail clients ignore stylesheets, so every element is styled inline.
-BRAND = "#129b68"
-INK = "#0b1324"
-INK_SOFT = "#273248"
-MUTED = "#5d6779"
-LINE = "#e2e8f0"
-CANVAS = "#f4f7fb"
-TRACK = "#dde5ee"
-FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif"
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,10 +103,6 @@ def _lead(reminder: Reminder) -> str:
     left = reminder.user.daily_goal - reminder.answered
     questions = "ikibazo 1" if left == 1 else f"ibibazo {left}"
     return f"Uri mu nzira nziza! Hasigaye {questions} ngo ugere ku ntego wihaye uyu munsi."
-
-
-def _font(size: int, weight: int = 400, color: str = INK, line: float = 1.5) -> str:
-    return f"font-family:{FONT};font-size:{size}px;font-weight:{weight};line-height:{line};color:{color};"
 
 
 def _html(reminder: Reminder, *, greeting: str, lead: str, preheader: str, site: str, unsubscribe_url: str) -> str:
@@ -263,13 +251,7 @@ def compose(reminder: Reminder) -> EmailMessage:
     lines = _lines(reminder)
     subject = _subject(reminder)
 
-    message = EmailMessage()
-    message["Subject"] = subject
-    message["From"] = settings.SMTP_FROM
-    message["To"] = user.email
-    # Mail servers and spam filters expect both; smtplib adds neither.
-    message["Date"] = formatdate(localtime=False)
-    message["Message-ID"] = make_msgid(domain=parseaddr(settings.SMTP_FROM)[1].rpartition("@")[2] or None)
+    message = new_message(user.email, subject)
     message["List-Unsubscribe"] = f"<{site}/api/v1/reminders/unsubscribe?token={token}>"
     message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     greeting = f"Mwiriwe {_first_name(user)},"
@@ -291,25 +273,6 @@ def compose(reminder: Reminder) -> EmailMessage:
         subtype="html",
     )
     return message
-
-
-def _deliver(messages: list[EmailMessage]) -> list[bool]:
-    """Sends over one SMTP connection (SSL on port 465, STARTTLS otherwise). Blocking: run it in a thread."""
-    smtp_class = smtplib.SMTP_SSL if settings.SMTP_PORT == 465 else smtplib.SMTP
-    results = []
-    with smtp_class(settings.SMTP_HOST, settings.SMTP_PORT, timeout=30) as smtp:
-        if smtp_class is smtplib.SMTP:
-            smtp.starttls()
-        if settings.SMTP_USERNAME:
-            smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD)
-        for message in messages:
-            try:
-                smtp.send_message(message)
-                results.append(True)
-            except smtplib.SMTPException as exc:
-                logger.warning("Reminder to %s failed: %s", message["To"], exc)
-                results.append(False)
-    return results
 
 
 async def send_reminders(db: AsyncSession, now: datetime | None = None, dry_run: bool = False) -> list[str]:

@@ -31,20 +31,32 @@ def verify_password(password: str, password_hash: str) -> bool:
 DUMMY_PASSWORD_HASH = hash_password("not-a-real-password")
 
 
-def create_token(subject: uuid.UUID, kind: TokenKind, lifetime: timedelta) -> str:
+def create_token(subject: uuid.UUID, kind: TokenKind, lifetime: timedelta, version: int = 0) -> str:
+    """`version`: the account's session_version for session tokens; raising it cancels every token issued before."""
     now = utcnow()
-    payload = {"sub": str(subject), "typ": kind, "iat": now, "exp": now + lifetime}
+    payload = {"sub": str(subject), "typ": kind, "ver": version, "iat": now, "exp": now + lifetime}
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=ALGORITHM)
 
 
-def decode_token(token: str, kind: TokenKind) -> uuid.UUID | None:
+def _claims(token: str, kind: TokenKind) -> tuple[uuid.UUID, int] | None:
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("typ") != kind:
             return None
-        return uuid.UUID(payload["sub"])
-    except (jwt.PyJWTError, KeyError, ValueError):
+        # Tokens issued before session versions existed carry none: they belong to version 0.
+        return uuid.UUID(payload["sub"]), int(payload.get("ver", 0))
+    except (jwt.PyJWTError, KeyError, TypeError, ValueError):
         return None
+
+
+def decode_token(token: str, kind: TokenKind) -> uuid.UUID | None:
+    claims = _claims(token, kind)
+    return claims[0] if claims else None
+
+
+def decode_session(token: str, kind: Literal["user", "admin"]) -> tuple[uuid.UUID, int] | None:
+    """(account id, session version) of a session cookie; the caller compares the version with the account's."""
+    return _claims(token, kind)
 
 
 def set_session_cookie(response: Response, name: str, token: str, max_age: int) -> None:

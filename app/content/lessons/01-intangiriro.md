@@ -55,4 +55,4 @@ Buri kibazo kigira ibisubizo bine (a, b, c, d) kandi kimwe gusa ni cyo cy’ukur
 > [!key] Ibyo kwibuka
 > - Ikizamini kigira ibibazo 20 bisubizwa mu minota 20.
 > - Ugomba kubona nibura 12 kuri 20 (60%) kugira ngo utsinde.
-> - Kuri Tsinda Neza, iyo umaze gukora ibizamini by’igerageza birenga 10 kandi impuzandengo yawe ikarenga 15/20, tukugira inama yo kujya gukora ikizamini nyirizina.
+> - Kuri Tsinda Neza, iyo umaze gukora ibizamini by’igerageza birenga 10 kandi impuzandengo y’ibizamini 10 biheruka ikarenga 15/20, tukugira inama yo kujya gukora ikizamini nyirizina.

@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.security import ADMIN_COOKIE, USER_COOKIE, decode_token
+from app.core.security import ADMIN_COOKIE, USER_COOKIE, decode_session
 from app.db.base import utcnow
 from app.db.session import get_db
 from app.models import Admin, User
@@ -19,11 +19,13 @@ ACTIVITY_TOUCH_INTERVAL = timedelta(minutes=5)
 
 async def _session_user(request: Request, db: AsyncSession) -> User | None:
     token = request.cookies.get(USER_COOKIE)
-    user_id = decode_token(token, "user") if token else None
-    if user_id is None:
+    claims = decode_session(token, "user") if token else None
+    if claims is None:
         return None
+    user_id, version = claims
     user = await db.get(User, user_id)
-    if user is None:
+    # A session from before "sign out everywhere" or a suspension has an older version: it no longer counts.
+    if user is None or version != user.session_version:
         return None
     now = utcnow()
     if user.is_active and (user.last_active_at is None or now - user.last_active_at > ACTIVITY_TOUCH_INTERVAL):
@@ -68,9 +70,10 @@ PaidUser = Annotated[User, Depends(require_access)]
 
 async def get_current_admin(request: Request, db: DB) -> Admin:
     token = request.cookies.get(ADMIN_COOKIE)
-    admin_id = decode_token(token, "admin") if token else None
-    admin = await db.get(Admin, admin_id) if admin_id else None
-    if admin is None:
+    claims = decode_session(token, "admin") if token else None
+    admin = await db.get(Admin, claims[0]) if claims else None
+    # A password reset raises the version: sessions opened with the old password end at once.
+    if admin is None or claims[1] != admin.session_version:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Injira nk’umuyobozi kugira ngo ukomeze.")
     return admin
 

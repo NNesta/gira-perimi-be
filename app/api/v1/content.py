@@ -44,6 +44,7 @@ async def overview(content: Content) -> OverviewOut:
             pass_mark=settings.EXAM_PASS_MARK,
             readiness_min_exams=settings.READINESS_MIN_EXAMS,
             readiness_min_average=settings.READINESS_MIN_AVERAGE,
+            readiness_recent_exams=settings.READINESS_RECENT_EXAMS,
         ),
     )
 

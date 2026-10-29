@@ -1,6 +1,21 @@
 import time
 from collections import defaultdict, deque
 
+from fastapi import Request
+
+from app.core.config import settings
+
+
+def client_ip(request: Request) -> str:
+    """The visitor's address. Behind the site's proxy every connection comes from the proxy, so it is read from
+    X-Forwarded-For: the entry TRUSTED_PROXY_HOPS from the end, added by our own servers (entries before it come from
+    the visitor and could be forged)."""
+    hops = settings.TRUSTED_PROXY_HOPS
+    forwarded = [ip.strip() for ip in request.headers.get("x-forwarded-for", "").split(",") if ip.strip()]
+    if hops > 0 and len(forwarded) >= hops:
+        return forwarded[-hops]
+    return request.client.host if request.client else "unknown"
+
 
 class SlidingWindowLimiter:
     """In-process limiter for brute-force protection (single API instance)."""

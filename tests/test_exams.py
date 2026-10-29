@@ -4,8 +4,9 @@ from datetime import timedelta
 from sqlalchemy import select
 
 from app.db.base import utcnow
-from app.models import ExamAttempt, User
-from app.models.exam import STATUS_COMPLETED
+from app.models import ExamAnswer, ExamAttempt, User
+from app.models.exam import STATUS_COMPLETED, STATUS_IN_PROGRESS
+from app.services import exams as exam_service
 from tests.conftest import login
 
 
@@ -58,6 +59,63 @@ async def test_expired_exam_is_graded_with_saved_answers(client, content, db):
     graded = (await client.get(f"/api/v1/exams/{exam['id']}")).json()
     assert graded["status"] == "completed" and graded["auto_submitted"] is True
     assert graded["score"] == 5 and graded["passed"] is False
+    # Every question was answered: the clock ran out, but the exam was sat, so readiness counts it.
+    assert (await client.get("/api/v1/me/dashboard")).json()["readiness"]["exams_completed"] == 1
+
+
+async def test_submit_counts_the_answer_sheet(client, content):
+    """Choices whose own save failed (poor connection) reach the server with the answer sheet."""
+    await login(client)
+    exam = (await client.post("/api/v1/exams")).json()
+    sheet = [
+        {"position": item["position"], "selected": content.questions[item["question_id"]].answer}
+        for item in exam["items"][:12]
+    ]
+    result = (await client.post(f"/api/v1/exams/{exam['id']}/submit", json={"answers": sheet})).json()
+    assert result["score"] == 12 and result["passed"] is True and result["answered"] == 12
+
+
+async def test_answer_sheet_is_ignored_once_time_is_up(client, content, db):
+    await login(client)
+    exam = (await client.post("/api/v1/exams")).json()
+    attempt = await db.get(ExamAttempt, uuid.UUID(exam["id"]))
+    attempt.deadline_at = utcnow() - timedelta(minutes=5)
+    await db.commit()
+
+    sheet = [{"position": i["position"], "selected": content.questions[i["question_id"]].answer} for i in exam["items"]]
+    result = (await client.post(f"/api/v1/exams/{exam['id']}/submit", json={"answers": sheet})).json()
+    assert result["score"] == 0 and result["auto_submitted"] is True
+
+
+async def test_simultaneous_starts_leave_one_exam(client, content, db, session_factory, monkeypatch):
+    """Another tab starts an exam between this request's check for a running one and its own new paper."""
+    await login(client)
+    check_running = exam_service.current_attempt
+    rival_ids: list[uuid.UUID] = []
+
+    async def other_tab_starts_meanwhile(session, user, store):
+        running = await check_running(session, user, store)
+        if not rival_ids:
+            async with session_factory() as other:
+                now = utcnow()
+                rival = ExamAttempt(
+                    user_id=user.id,
+                    started_at=now,
+                    deadline_at=now + timedelta(minutes=20),
+                    total=20,
+                    answers=[ExamAnswer(position=i + 1, question_id=qid) for i, qid in enumerate(store.draw_exam(20))],
+                )
+                other.add(rival)
+                await other.commit()
+                rival_ids.append(rival.id)
+        return running
+
+    monkeypatch.setattr(exam_service, "current_attempt", other_tab_starts_meanwhile)
+    started = (await client.post("/api/v1/exams")).json()
+
+    assert started["id"] == str(rival_ids[0])
+    running = (await db.scalars(select(ExamAttempt.id).where(ExamAttempt.status == STATUS_IN_PROGRESS))).all()
+    assert running == rival_ids
 
 
 async def test_other_users_cannot_see_an_exam(client):
@@ -105,6 +163,30 @@ async def test_average_of_exactly_fifteen_is_not_enough(client, db):
     await seed_completed_exams(db, uuid.UUID(user["id"]), [15] * 12)
     readiness = (await client.get("/api/v1/me/dashboard")).json()["readiness"]
     assert readiness["ready"] is False and readiness["average"] == 15.0
+
+
+async def test_readiness_follows_the_most_recent_exams(client, db):
+    """Early low scores stop counting once the learner has improved."""
+    user = await login(client)
+    await seed_completed_exams(db, uuid.UUID(user["id"]), [9] * 5 + [18] * 10)
+    dashboard = (await client.get("/api/v1/me/dashboard")).json()
+    assert dashboard["exams"]["average"] == 15.0  # over every exam, it would not be enough
+    readiness = dashboard["readiness"]
+    assert readiness["ready"] is True and readiness["average"] == 18.0 and readiness["average_window"] == 10
+
+
+async def test_abandoned_exam_does_not_count_for_readiness(client, db):
+    await login(client)
+    exam = (await client.post("/api/v1/exams")).json()
+    for item in exam["items"][:3]:
+        await client.put(f"/api/v1/exams/{exam['id']}/answers/{item['position']}", json={"selected": 0})
+    attempt = await db.get(ExamAttempt, uuid.UUID(exam["id"]))
+    attempt.deadline_at = utcnow() - timedelta(minutes=5)
+    await db.commit()
+
+    dashboard = (await client.get("/api/v1/me/dashboard")).json()
+    assert dashboard["exams"]["completed"] == 1  # still in the history
+    assert dashboard["readiness"]["exams_completed"] == 0 and dashboard["readiness"]["status"] == "new"
 
 
 async def test_dashboard_tracks_lessons_and_practice(client, content, db):

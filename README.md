@@ -165,7 +165,7 @@ and daily goals right.
 | Questions per mock exam | 20, drawn at random, no duplicates | `EXAM_QUESTION_COUNT` |
 | Time limit | 20 minutes, enforced by the server; unanswered time-outs are graded with saved answers | `EXAM_DURATION_MINUTES` |
 | Pass mark | 12/20 (60%) | `EXAM_PASS_MARK` |
-| Readiness recommendation | **more than 10** completed exams **and** average **above 15/20** | `READINESS_MIN_EXAMS`, `READINESS_MIN_AVERAGE` |
+| Readiness recommendation | **more than 10** completed exams **and** average of the **last 10** **above 15/20**; abandoned exams (time ran out, under half answered) do not count | `READINESS_MIN_EXAMS`, `READINESS_MIN_AVERAGE`, `READINESS_RECENT_EXAMS` |
 
 Exam format source: Rwanda National Police (20 questions, 20 minutes, 60% to pass).
 
@@ -235,7 +235,7 @@ Manual fixes found while reviewing the contact sheets are encoded in `build_bank
 git pull                     # or upload the changed files
 uv sync --no-dev
 uv run python -m app.cli backup   # a fresh copy of the database before touching it
-uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0005 shared results · 0006 outcomes
+uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0005 shared results · 0006 outcomes · 0007 answered count
 ```
 
 Then reload the web app. On PythonAnywhere: `pa website reload --domain <your domain>`.
@@ -299,4 +299,6 @@ uv run ruff check . && uv run ruff format --check .
 - Serve over HTTPS (cookies become `Secure` automatically); `/docs` is disabled in production.
 - Run `python -m app.cli backup`, then `uv run alembic upgrade head`, on every deploy; schedule `python -m app.cli daily`.
 - Set `SENTRY_DSN` so crashes reach you before learners report them.
-- The admin login rate limiter is in-process: run a single API worker, or move it to a shared store.
+- The admin login rate limiter is in-process: run a single API worker, or move it to a shared store. It tells visitors
+  apart by `X-Forwarded-For`: set `TRUSTED_PROXY_HOPS` to the number of your servers that add to that header (the
+  Next.js site is 1; add 1 if the API's host puts its own proxy in front of it).

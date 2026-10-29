@@ -16,11 +16,14 @@ PlanPace = Literal["none", "on_track", "tight", "today", "passed", "succeeded"]
 class ReadinessOut(BaseModel):
     status: ReadinessStatus
     ready: bool
+    # Completed exams that count: abandoned ones (time ran out, under half answered) do not.
     exams_completed: int
     exams_required: int
     exams_remaining: int
+    # Average of the `average_window` most recent exams that count.
     average: float | None
     average_required: float
+    average_window: int
 
 
 class ExamStatsOut(BaseModel):

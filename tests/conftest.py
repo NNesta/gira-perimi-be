@@ -8,6 +8,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.v1.admin import login_limiter
+from app.api.v1.auth import link_limiter_address, link_limiter_visitor
 from app.core.config import settings
 from app.core.security import hash_password
 from app.db.base import Base
@@ -78,7 +79,8 @@ async def client(session_factory, monkeypatch) -> AsyncIterator[AsyncClient]:
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", GOOGLE_CLIENT_ID)
     monkeypatch.setattr(id_token, "verify_oauth2_token", fake_verify_oauth2_token)
     app.dependency_overrides[get_db] = override_db
-    login_limiter._hits.clear()
+    for limiter in (login_limiter, link_limiter_address, link_limiter_visitor):
+        limiter._hits.clear()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as http:
         yield http
     app.dependency_overrides.clear()

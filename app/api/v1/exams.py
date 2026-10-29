@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from app.core.deps import DB, Content, PaidUser
 from app.models import ExamAttempt
-from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut, ShareCodeOut
+from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut, ShareCodeOut, SubmitIn
 from app.services import exams as exam_service
 from app.services import explanations
 
@@ -76,9 +76,13 @@ async def save_answer(
 
 
 @router.post("/{exam_id}/submit")
-async def submit_exam(exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content) -> ExamOut:
+async def submit_exam(
+    exam_id: uuid.UUID, db: DB, user: PaidUser, content: Content, body: SubmitIn | None = None
+) -> ExamOut:
+    """Grades the exam. The optional answer sheet carries choices whose own save failed (ignored once time is up)."""
     attempt = await _load(db, user, exam_id)
-    await exam_service.submit(db, attempt, content)
+    sheet = {a.position: a.selected for a in body.answers} if body else None
+    await exam_service.submit(db, attempt, content, sheet)
     return await _out(db, attempt, content)
 
 

@@ -59,6 +59,7 @@ async def test_public_content_endpoints(client):
         "pass_mark": 12,
         "readiness_min_exams": 10,
         "readiness_min_average": 15.0,
+        "readiness_recent_exams": 10,
     }
 
     lessons = (await client.get("/api/v1/lessons")).json()

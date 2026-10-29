@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, SmallInteger, String, Uuid, false, text
+from sqlalchemy import Boolean, Date, Integer, SmallInteger, String, Uuid, false, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -30,6 +30,8 @@ class User(Base):
     plan: Mapped[str] = mapped_column(String(20), default="free")
     plan_expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Carried by every session token; raising it ("sign out everywhere", a suspension) cancels earlier sessions.
+    session_version: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     last_login_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     last_active_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
@@ -54,6 +56,11 @@ class User(Base):
     @property
     def onboarded(self) -> bool:
         return self.onboarded_at is not None
+
+    @property
+    def google_account(self) -> bool:
+        """Has signed in with Google at least once (name and photo then come from Google)."""
+        return self.google_sub is not None
 
     @property
     def has_premium(self) -> bool:

@@ -71,3 +71,14 @@ class AnswerSavedOut(BaseModel):
     position: int
     selected: int | None
     answered: int
+
+
+class SheetAnswerIn(BaseModel):
+    position: int = Field(ge=1, le=100)
+    selected: int = Field(ge=0, le=3)
+
+
+class SubmitIn(BaseModel):
+    """The learner's answer sheet as their device last saw it, so choices whose own save failed are counted too."""
+
+    answers: list[SheetAnswerIn] = Field(default_factory=list, max_length=100)

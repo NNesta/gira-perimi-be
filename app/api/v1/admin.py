@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, Response, status
 
 from app.core.config import settings
 from app.core.deps import DB, Content, CurrentAdmin
-from app.core.ratelimit import SlidingWindowLimiter
+from app.core.ratelimit import SlidingWindowLimiter, client_ip
 from app.core.security import ADMIN_COOKIE, clear_session_cookie, create_token, set_session_cookie
 from app.models import Admin, ExamOutcome, User
 from app.schemas.admin import (
@@ -34,13 +34,9 @@ USER_NOT_FOUND = "Uwo munyeshuri ntabonetse."
 QUESTION_NOT_FOUND = "Icyo kibazo ntikibonetse."
 
 
-def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
-
-
 @router.post("/auth/login", response_model=AdminOut)
 async def admin_login(body: AdminLoginIn, request: Request, response: Response, db: DB) -> Admin:
-    keys = (f"ip:{_client_ip(request)}", f"email:{body.email.strip().lower()}")
+    keys = (f"ip:{client_ip(request)}", f"email:{body.email.strip().lower()}")
     wait = max(login_limiter.retry_after(k) for k in keys)
     if wait:
         raise HTTPException(
@@ -56,7 +52,8 @@ async def admin_login(body: AdminLoginIn, request: Request, response: Response, 
     for key in keys:
         login_limiter.reset(key)
     lifetime = timedelta(hours=settings.ADMIN_SESSION_HOURS)
-    set_session_cookie(response, ADMIN_COOKIE, create_token(admin.id, "admin", lifetime), int(lifetime.total_seconds()))
+    token = create_token(admin.id, "admin", lifetime, admin.session_version)
+    set_session_cookie(response, ADMIN_COOKIE, token, int(lifetime.total_seconds()))
     return admin
 
 

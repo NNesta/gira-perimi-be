@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String, UniqueConstraint, Uuid
+from sqlalchemy import Boolean, ForeignKey, Integer, SmallInteger, String, UniqueConstraint, Uuid, and_, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -28,6 +28,8 @@ class ExamAttempt(Base):
     auto_submitted: Mapped[bool] = mapped_column(Boolean, default=False)
     total: Mapped[int] = mapped_column(Integer)
     score: Mapped[int | None] = mapped_column(Integer)
+    # Questions answered when it was graded; null while it runs.
+    answered: Mapped[int | None] = mapped_column(SmallInteger)
     # Short public code for the result card a learner chose to share ("Nabonye 19/20"); null until they do.
     share_code: Mapped[str | None] = mapped_column(String(16), unique=True)
 
@@ -42,6 +44,15 @@ class ExamAttempt(Base):
     @property
     def is_completed(self) -> bool:
         return self.status == STATUS_COMPLETED
+
+    @property
+    def abandoned(self) -> bool:
+        """Time ran out with fewer than half the questions answered: the learner left it. Readiness ignores it."""
+        return self.auto_submitted and 2 * (self.answered or 0) < self.total
+
+
+# SQL twin of ExamAttempt.abandoned.
+ABANDONED = and_(ExamAttempt.auto_submitted, 2 * func.coalesce(ExamAttempt.answered, 0) < ExamAttempt.total)
 
 
 class ExamAnswer(Base):

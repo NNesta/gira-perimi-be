@@ -27,8 +27,18 @@ class Settings(BaseSettings):
     OUTBOUND_PROXY: str = ""
     COOKIE_SECURE: bool = False
     FRONTEND_ORIGINS: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # How many of your own servers put an address into X-Forwarded-For before a request reaches the API. The Next.js
+    # site counts as 1 (it records the visitor's address); add 1 for a proxy in front of the API that appends to the
+    # header (e.g. a hosting provider's load balancer). 0 = the API is reached directly: ignore the header. Used to
+    # rate-limit admin sign-in per visitor instead of per proxy.
+    TRUSTED_PROXY_HOPS: int = 1
     ADMIN_LOGIN_MAX_ATTEMPTS: int = 5
     ADMIN_LOGIN_WINDOW_SECONDS: int = 15 * 60
+    # Sign-in links by email, for learners who cannot use Google: each works once, for this many minutes. Uses the
+    # SMTP settings below; without them the option is hidden. Sending is limited per address and per visitor.
+    EMAIL_LOGIN_MINUTES: int = 15
+    EMAIL_LOGIN_PER_ADDRESS: int = 3  # links per address per EMAIL_LOGIN_MINUTES
+    EMAIL_LOGIN_PER_VISITOR: int = 10  # links per visitor per hour
 
     # Exam rules (mirrors the Rwanda National Police provisional test)
     EXAM_QUESTION_COUNT: int = 20
@@ -36,10 +46,12 @@ class Settings(BaseSettings):
     EXAM_PASS_MARK: int = 12
     EXAM_GRACE_SECONDS: int = 15
 
-    # A learner is recommended for the real exam after MORE than READINESS_MIN_EXAMS
-    # completed exams with an average strictly ABOVE READINESS_MIN_AVERAGE (out of 20).
+    # A learner is recommended for the real exam after MORE than READINESS_MIN_EXAMS completed exams, once the average
+    # of their READINESS_RECENT_EXAMS most recent ones is strictly ABOVE READINESS_MIN_AVERAGE (out of 20). Early
+    # scores stop counting as the learner improves, and abandoned exams (time ran out, under half answered) never count.
     READINESS_MIN_EXAMS: int = 10
     READINESS_MIN_AVERAGE: float = 15.0
+    READINESS_RECENT_EXAMS: int = 10
 
     # Future subscriptions: when enabled, practice/exams/premium lessons require an active plan.
     PAYWALL_ENABLED: bool = False
@@ -87,6 +99,11 @@ class Settings(BaseSettings):
     @property
     def reminders_available(self) -> bool:
         """Reminder emails can be sent."""
+        return bool(self.SMTP_HOST and self.SMTP_FROM)
+
+    @property
+    def email_login_available(self) -> bool:
+        """Sign-in links can be emailed (same SMTP settings as reminders)."""
         return bool(self.SMTP_HOST and self.SMTP_FROM)
 
     @property

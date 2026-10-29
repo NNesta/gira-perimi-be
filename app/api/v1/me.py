@@ -56,6 +56,9 @@ async def report_outcome(body: OutcomeIn, db: DB, user: CurrentUser) -> OutcomeO
 async def update_profile(body: UserUpdate, db: DB, user: CurrentUser) -> User:
     """Phone, exam date, daily goal, reminders and the first-time welcome. Only the fields sent change."""
     fields = body.model_fields_set
+    if "name" in fields and body.name and body.name.strip():
+        user.name = " ".join(body.name.split())
+        user.given_name = user.name.split()[0]
     if "phone" in fields:
         user.phone = body.phone.strip() if body.phone else None
     if "exam_date" in fields:

@@ -2,14 +2,14 @@ import uuid
 from collections import defaultdict
 from datetime import timedelta
 
-from sqlalchemy import Float, case, cast, desc, func, or_, select
+from sqlalchemy import Float, case, cast, desc, func, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.db.base import utcnow
 from app.models import Admin, ExamAnswer, ExamAttempt, ExamOutcome, PracticeAnswer, QuestionExplanation, User
-from app.models.exam import STATUS_COMPLETED
+from app.models.exam import ABANDONED, STATUS_COMPLETED
 from app.schemas.admin import (
     AdminQuestionOut,
     AdminQuestionsOut,
@@ -53,6 +53,36 @@ def _exam_aggregates():
     )
 
 
+def _readiness_aggregates():
+    """Per learner, what readiness looks at (see progress.readiness): the exams that count, and the average of the most
+    recent READINESS_RECENT_EXAMS of them."""
+    ranked = (
+        select(
+            ExamAttempt.user_id,
+            ExamAttempt.score,
+            func.row_number()
+            .over(partition_by=ExamAttempt.user_id, order_by=ExamAttempt.submitted_at.desc())
+            .label("rank"),
+        )
+        .where(ExamAttempt.status == STATUS_COMPLETED, not_(ABANDONED))
+        .subquery()
+    )
+    recent_score = case((ranked.c.rank <= settings.READINESS_RECENT_EXAMS, cast(ranked.c.score, Float)))
+    return (
+        select(
+            ranked.c.user_id.label("user_id"),
+            func.count().label("exams"),
+            func.avg(recent_score).label("average"),
+        )
+        .group_by(ranked.c.user_id)
+        .subquery()
+    )
+
+
+def _readiness(exams: int | None, average: float | None) -> tuple[bool, str]:
+    return progress.readiness_status(exams or 0, round(average, 2) if average is not None else None)
+
+
 async def _per_question(db: AsyncSession) -> dict[int, list[int]]:
     """question_id -> [answers, correct answers], across practice and finished exams."""
     per_question: dict[int, list[int]] = defaultdict(lambda: [0, 0])
@@ -82,8 +112,8 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
     week_ago = now - timedelta(days=7)
     completed = ExamAttempt.status == STATUS_COMPLETED
 
-    agg = _exam_aggregates()
-    per_user = (await db.execute(select(agg.c.exams, agg.c.average))).all()
+    ready = _readiness_aggregates()
+    per_user = (await db.execute(select(ready.c.exams, ready.c.average))).all()
     score_row = (
         await db.execute(
             select(
@@ -125,7 +155,7 @@ async def platform_stats(db: AsyncSession, content: ContentStore) -> PlatformSta
         users_total=await _count(db, User),
         users_new_7d=await _count(db, User, User.created_at >= week_ago),
         users_active_7d=await _count(db, User, User.last_active_at >= week_ago),
-        users_ready=sum(progress.readiness_status(n, avg)[0] for n, avg in per_user),
+        users_ready=sum(_readiness(n, avg)[0] for n, avg in per_user),
         exams_total=total_exams or 0,
         exams_7d=await _count(db, ExamAttempt, completed, ExamAttempt.submitted_at >= week_ago),
         average_score=round(average, 2) if average is not None else None,
@@ -156,8 +186,13 @@ async def list_users(
     db: AsyncSession, *, search: str | None, sort: UserSort, descending: bool, page: int, page_size: int
 ) -> Page[AdminUserRowOut]:
     agg = _exam_aggregates()
+    ready = _readiness_aggregates()
     exams_col = func.coalesce(agg.c.exams, 0)
-    query = select(User, exams_col, agg.c.average, agg.c.best).outerjoin(agg, agg.c.user_id == User.id)
+    query = (
+        select(User, exams_col, agg.c.average, agg.c.best, ready.c.exams, ready.c.average)
+        .outerjoin(agg, agg.c.user_id == User.id)
+        .outerjoin(ready, ready.c.user_id == User.id)
+    )
     if search:
         term = f"%{search.strip().lower()}%"
         query = query.where(or_(func.lower(User.name).like(term), func.lower(User.email).like(term)))
@@ -174,8 +209,8 @@ async def list_users(
     total = await db.scalar(select(func.count()).select_from(query.order_by(None).subquery())) or 0
     rows = (await db.execute(query.limit(page_size).offset((page - 1) * page_size))).all()
     items = []
-    for user, exams, average, best in rows:
-        ready, status = progress.readiness_status(exams, average)
+    for user, exams, average, best, counted, recent_average in rows:
+        is_ready, status = _readiness(counted, recent_average)
         items.append(
             AdminUserRowOut(
                 id=user.id,
@@ -189,7 +224,7 @@ async def list_users(
                 exams_completed=exams,
                 average=round(average, 2) if average is not None else None,
                 best=best,
-                ready=ready,
+                ready=is_ready,
                 readiness_status=status,
             )
         )
@@ -218,7 +253,7 @@ async def user_detail(db: AsyncSession, user: User, content: ContentStore) -> Ad
         created_at=user.created_at,
         last_login_at=user.last_login_at,
         last_active_at=user.last_active_at,
-        readiness=progress.readiness(scores),
+        readiness=progress.readiness(progress.readiness_scores(exams)),
         exams=progress.exam_stats(scores),
         topics=progress.topic_mastery(history, content),
         lessons_completed=len([s for s in lessons if s in content.lessons_by_slug]),
@@ -238,6 +273,8 @@ async def get_user(db: AsyncSession, user_id: uuid.UUID) -> User | None:
 
 async def update_user(db: AsyncSession, user: User, data: AdminUserUpdate) -> User:
     if data.is_active is not None:
+        if user.is_active and not data.is_active:
+            user.session_version += 1  # a suspension also ends the sessions already open, even if lifted later
         user.is_active = data.is_active
     if data.plan is not None:
         user.plan = data.plan

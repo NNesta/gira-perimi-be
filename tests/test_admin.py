@@ -24,6 +24,25 @@ async def test_admin_login_is_rate_limited(client, admin):
     assert blocked.status_code == 429 and "Retry-After" in blocked.headers
 
 
+async def test_admin_login_limit_is_per_visitor_behind_the_proxy(client, admin):
+    """Behind the site's proxy every request comes from one address: X-Forwarded-For tells visitors apart."""
+
+    async def attempt(email: str, password: str, forwarded_for: str):
+        return await client.post(
+            "/api/v1/admin/auth/login",
+            json={"email": email, "password": password},
+            headers={"X-Forwarded-For": forwarded_for},
+        )
+
+    for i in range(5):
+        assert (await attempt(f"umushyitsi{i}@example.com", "wrong-password", "203.0.113.7")).status_code == 401
+    assert (await attempt("undi@example.com", "wrong-password", "203.0.113.7")).status_code == 429
+    # A forged entry in front of the one the site added changes nothing.
+    assert (await attempt("undi@example.com", "wrong-password", "10.9.9.9, 203.0.113.7")).status_code == 429
+    # Another visitor can still sign in.
+    assert (await attempt(ADMIN_EMAIL, ADMIN_PASSWORD, "198.51.100.4")).status_code == 200
+
+
 async def test_admin_dashboard_and_user_management(client, admin, db):
     learner = await login(client)
     learner_id = uuid.UUID(learner["id"])

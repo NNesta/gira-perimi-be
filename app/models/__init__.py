@@ -1,4 +1,5 @@
 from app.models.admin import Admin
+from app.models.email_login import EmailLogin
 from app.models.exam import ExamAnswer, ExamAttempt
 from app.models.explanation import QuestionExplanation
 from app.models.outcome import ExamOutcome
@@ -10,6 +11,7 @@ from app.models.user import User
 
 __all__ = [
     "Admin",
+    "EmailLogin",
     "ExamAnswer",
     "ExamAttempt",
     "ExamOutcome",

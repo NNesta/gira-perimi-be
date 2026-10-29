@@ -37,7 +37,7 @@ DEFAULT_EXAM_EVERY_DAYS = 2
 
 
 def readiness_status(count: int, average: float | None) -> tuple[bool, str]:
-    """Recommended for the real exam after MORE than N exams with an average strictly ABOVE the bar."""
+    """Recommended for the real exam after MORE than N counted exams, with a recent average strictly ABOVE the bar."""
     ready = count > settings.READINESS_MIN_EXAMS and average is not None and average > settings.READINESS_MIN_AVERAGE
     if count == 0:
         return False, "new"
@@ -48,9 +48,17 @@ def readiness_status(count: int, average: float | None) -> tuple[bool, str]:
     return False, "learning"
 
 
+def readiness_scores(exams: list[ExamAttempt]) -> list[int]:
+    """Scores of the completed exams readiness counts (all but the abandoned ones), in the order given."""
+    return [e.score or 0 for e in exams if not e.abandoned]
+
+
 def readiness(scores: list[int]) -> ReadinessOut:
+    """`scores`: see readiness_scores, oldest first. The average is over the most recent READINESS_RECENT_EXAMS, so a
+    learner's first attempts stop holding them back once they have improved."""
     count = len(scores)
-    average = round(sum(scores) / count, 2) if count else None
+    recent = scores[-settings.READINESS_RECENT_EXAMS :]
+    average = round(sum(recent) / len(recent), 2) if recent else None
     required = settings.READINESS_MIN_EXAMS + 1
     ready, status = readiness_status(count, average)
     return ReadinessOut(
@@ -61,6 +69,7 @@ def readiness(scores: list[int]) -> ReadinessOut:
         exams_remaining=max(0, required - count),
         average=average,
         average_required=settings.READINESS_MIN_AVERAGE,
+        average_window=settings.READINESS_RECENT_EXAMS,
     )
 
 
@@ -268,7 +277,7 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
     days_active.update(lesson_days)
 
     lessons_out = lesson_progress(lessons, content)
-    readiness_out = readiness(scores)
+    readiness_out = readiness(readiness_scores(exams))
     plan = study_plan(user, today, lessons_out.total - lessons_out.completed, readiness_out.exams_remaining)
     answered_today = (await answered_since(db, day_start(today), [user.id])).get(user.id, 0)
     outcome = await outcomes.for_date(db, user.id, user.exam_date) if user.exam_date else None

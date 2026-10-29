@@ -104,6 +104,7 @@ class ExamRulesOut(BaseModel):
     pass_mark: int
     readiness_min_exams: int
     readiness_min_average: float
+    readiness_recent_exams: int
 
 
 class QuestionSearchOut(BaseModel):

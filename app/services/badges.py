@@ -45,9 +45,9 @@ async def badges(db: AsyncSession, user: User, content: ContentStore) -> BadgesO
         (
             "witeguye",
             "Witeguye",
-            f"Kora ibizamini birenga {settings.READINESS_MIN_EXAMS}, impuzandengo irenga "
-            f"{settings.READINESS_MIN_AVERAGE:g}/{questions}.",
-            int(progress.readiness(scores).ready),
+            f"Kora ibizamini birenga {settings.READINESS_MIN_EXAMS}, impuzandengo y’ibizamini "
+            f"{settings.READINESS_RECENT_EXAMS} biheruka irenga {settings.READINESS_MIN_AVERAGE:g}/{questions}.",
+            int(progress.readiness(progress.readiness_scores(exams)).ready),
             1,
         ),
         ("iminsi-3", "Iminsi 3", "Iga iminsi 3 ikurikiranye.", longest, 3),

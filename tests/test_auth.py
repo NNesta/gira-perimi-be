@@ -78,7 +78,7 @@ async def test_protected_routes_require_login(client):
 
 
 async def test_learners_cannot_sign_in_with_email_only(client):
-    # Email + password is for admins; there is no email-only learner sign-in.
+    # Email + password is for admins; learners use Google or a one-time link sent by email, never a bare address.
     response = await client.post("/api/v1/auth/dev-login", json={"email": "a@b.rw", "name": "Aba"})
     assert response.status_code == 404
 
@@ -90,6 +90,7 @@ async def test_google_login_without_client_id_is_unavailable(client, monkeypatch
     config = (await client.get("/api/v1/auth/config")).json()
     assert config == {
         "google_client_id": None,
+        "email_login": False,
         "paywall_enabled": False,
         "reminders_available": False,
         "push_public_key": None,

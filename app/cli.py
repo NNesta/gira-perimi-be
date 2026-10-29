@@ -56,7 +56,8 @@ async def create_admin(email: str, name: str) -> None:
         else:
             admin.name = name
             admin.password_hash = password_hash
-            action = "updated (password reset)"
+            admin.session_version += 1  # sessions opened with the old password end now
+            action = "updated (password reset, signed out everywhere)"
         await db.commit()
     await engine.dispose()
     print(f"Admin {email} {action}.")

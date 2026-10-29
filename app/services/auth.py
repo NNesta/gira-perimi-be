@@ -103,6 +103,28 @@ async def upsert_user(
     return user
 
 
+async def sign_in_by_email(db: AsyncSession, *, email: str, name: str | None) -> User:
+    """Signs in the owner of `email`, proven by a sign-in link, registering them on first use.
+
+    Unlike Google, a link brings no profile, so an existing account keeps its name and photo; `name` (given with the
+    request) only names a new account, which otherwise starts with the part of the address before the @.
+    """
+    email = email.strip().lower()
+    user = (await db.scalars(select(User).where(User.email == email))).first()
+    now = utcnow()
+    if user is None:
+        name = " ".join((name or "").split()) or email.split("@")[0]
+        user = User(email=email, name=name, given_name=name.split()[0])
+        db.add(user)
+    elif not user.is_active:
+        raise AccountSuspended
+    user.last_login_at = now
+    user.last_active_at = now
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def authenticate_admin(db: AsyncSession, email: str, password: str) -> Admin | None:
     admin = (await db.scalars(select(Admin).where(Admin.email == email.strip().lower()))).first()
     # bcrypt is CPU-bound: keep it off the event loop. The dummy hash keeps timing constant for unknown emails.
