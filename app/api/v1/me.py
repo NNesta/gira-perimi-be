@@ -37,8 +37,10 @@ async def badges(db: DB, user: CurrentUser, content: Content) -> BadgesOut:
 @router.post("/outcome")
 async def report_outcome(body: OutcomeIn, db: DB, user: CurrentUser) -> OutcomeOut:
     """ "Watsinze ikizamini?": the learner's answer for their (past) exam date, with optional words for others."""
+    exams = await progress_service.completed_exams(db, user.id)
+    level = progress_service.readiness(progress_service.readiness_scores(exams))
     try:
-        outcome = await outcome_service.record(db, user, body, local_day(utcnow()))
+        outcome = await outcome_service.record(db, user, body, local_day(utcnow()), level)
     except outcome_service.OutcomeMismatch as exc:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_CONTENT, "Iyi tariki si iy’ikizamini cyawe cyarangiye."

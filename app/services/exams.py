@@ -12,7 +12,7 @@ from app.models.exam import STATUS_COMPLETED, STATUS_IN_PROGRESS
 from app.schemas.content import OptionOut
 from app.schemas.exam import ExamItemOut, ExamOut, ExamSummaryOut
 from app.services import review
-from app.services.content import ContentStore
+from app.services.content import ContentStore, explanation_audio
 from app.services.explanations import Explanation
 
 
@@ -92,13 +92,20 @@ async def start_exam(db: AsyncSession, user: User, content: ContentStore) -> Exa
     running = await current_attempt(db, user, content)
     if running is not None:
         return running
-    question_ids = content.draw_exam(settings.EXAM_QUESTION_COUNT)
+    return await new_attempt(db, user, content, content.draw_exam(settings.EXAM_QUESTION_COUNT))
+
+
+async def new_attempt(
+    db: AsyncSession, user: User, content: ContentStore, question_ids: list[int], challenge_id: uuid.UUID | None = None
+) -> ExamAttempt:
+    """Starts the clock on a paper: a fresh draw, or a friend's (`challenge_id`)."""
     now = utcnow()
     attempt = ExamAttempt(
         user_id=user.id,
         started_at=now,
         deadline_at=now + timedelta(minutes=settings.EXAM_DURATION_MINUTES),
         total=len(question_ids),
+        challenge_id=challenge_id,
         answers=[ExamAnswer(position=i + 1, question_id=qid) for i, qid in enumerate(question_ids)],
     )
     db.add(attempt)
@@ -182,7 +189,12 @@ def to_summary(attempt: ExamAttempt) -> ExamSummaryOut:
     )
 
 
-def to_out(attempt: ExamAttempt, content: ContentStore, notes: dict[int, Explanation] | None = None) -> ExamOut:
+def to_out(
+    attempt: ExamAttempt,
+    content: ContentStore,
+    notes: dict[int, Explanation] | None = None,
+    challenge_code: str | None = None,
+) -> ExamOut:
     """`notes` (explanations) are only shown once the exam is completed."""
     completed = attempt.status == STATUS_COMPLETED
     notes = notes if completed and notes else {}
@@ -204,6 +216,8 @@ def to_out(attempt: ExamAttempt, content: ContentStore, notes: dict[int, Explana
                 is_correct=answer.is_correct if completed else None,
                 explanation=note.text if note else None,
                 law_ref=note.law_ref if note else None,
+                audio=q.audio,
+                explanation_audio=explanation_audio(q, note.text) if note else None,
             )
         )
     return ExamOut(
@@ -220,4 +234,5 @@ def to_out(attempt: ExamAttempt, content: ContentStore, notes: dict[int, Explana
         passed=passed(attempt),
         answered=sum(a.selected is not None for a in attempt.answers),
         items=items,
+        challenge_code=challenge_code,
     )

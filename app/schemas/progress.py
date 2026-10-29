@@ -1,3 +1,4 @@
+import uuid
 from datetime import date, datetime
 from typing import Literal
 
@@ -85,6 +86,20 @@ class PlanOut(BaseModel):
     exams_per_day: int | None
 
 
+class PredictionOut(BaseModel):
+    """How learners at the same level did in the real exam, by their own account: "at your level, X% passed".
+
+    The level is the average of one's recent mock exams, in bands (e.g. 15–17/20). Only given once enough learners in
+    the band have answered "Watsinze ikizamini?" (OUTCOME_MIN_ANSWERS).
+    """
+
+    band_low: float
+    band_high: float
+    reports: int
+    passed: int
+    pass_rate: float
+
+
 class DashboardOut(BaseModel):
     user: UserOut
     readiness: ReadinessOut
@@ -104,6 +119,8 @@ class DashboardOut(BaseModel):
     review: ReviewSummaryOut
     # "Watsinze ikizamini?": the past exam date to ask about, or null.
     outcome_question: date | None = None
+    # How learners at this learner's level did in the real exam, once there are enough answers (see PredictionOut).
+    prediction: PredictionOut | None = None
 
 
 class BadgeOut(BaseModel):
@@ -120,3 +137,25 @@ class BadgesOut(BaseModel):
     earned: int
     total: int
     items: list[BadgeOut]
+
+
+class LearnerReportOut(BaseModel):
+    """A learner's progress as staff see it: admins (who see more, see AdminUserDetailOut) and the instructors of the
+    classes the learner joined."""
+
+    id: uuid.UUID
+    email: str
+    name: str
+    picture_url: str | None
+    last_active_at: datetime | None
+    exam_date: date | None
+    daily_goal: int
+    streak_days: int
+    readiness: ReadinessOut
+    exams: ExamStatsOut
+    topics: list[TopicMasteryOut]
+    lessons_completed: int
+    lessons_total: int
+    practice_answers: int
+    recent_exams: list[ExamSummaryOut]
+    review: ReviewSummaryOut

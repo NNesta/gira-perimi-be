@@ -30,6 +30,10 @@ class ExamAttempt(Base):
     score: Mapped[int | None] = mapped_column(Integer)
     # Questions answered when it was graded; null while it runs.
     answered: Mapped[int | None] = mapped_column(SmallInteger)
+    # Set when the exam is a friend's challenge ("Hangana nanjye"): the same paper, compared on the challenge page.
+    challenge_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("challenges.id", ondelete="SET NULL"), index=True
+    )
     # Short public code for the result card a learner chose to share ("Nabonye 19/20"); null until they do.
     share_code: Mapped[str | None] = mapped_column(String(16), unique=True)
 

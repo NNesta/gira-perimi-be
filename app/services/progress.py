@@ -16,6 +16,7 @@ from app.schemas.progress import (
     ActivityDayOut,
     DashboardOut,
     ExamStatsOut,
+    LearnerReportOut,
     LessonProgressOut,
     PlanOut,
     ReadinessOut,
@@ -250,9 +251,11 @@ async def lesson_slugs(db: AsyncSession, user_id) -> list[str]:
 
 
 def lesson_progress(completed: list[str], content: ContentStore) -> LessonProgressOut:
-    done = [slug for slug in completed if slug in content.lessons_by_slug]
-    next_slug = next((lesson["slug"] for lesson in content.lessons if lesson["slug"] not in done), None)
-    return LessonProgressOut(completed=len(done), total=len(content.lessons), completed_slugs=done, next_slug=next_slug)
+    """Progress through the lessons that prepare the theory exam (after-the-exam guides are extra)."""
+    core = {lesson["slug"] for lesson in content.core_lessons}
+    done = [slug for slug in completed if slug in core]
+    next_slug = next((lesson["slug"] for lesson in content.core_lessons if lesson["slug"] not in done), None)
+    return LessonProgressOut(completed=len(done), total=len(core), completed_slugs=done, next_slug=next_slug)
 
 
 async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> DashboardOut:
@@ -322,4 +325,39 @@ async def dashboard(db: AsyncSession, user: User, content: ContentStore) -> Dash
         plan=plan,
         review=await review.summary(db, user.id),
         outcome_question=None if outcome else await outcomes.question_due(db, user, today),
+        prediction=await outcomes.prediction(db, readiness_out.average),
+    )
+
+
+async def learner_report(db: AsyncSession, user: User, content: ContentStore) -> LearnerReportOut:
+    """A learner's progress for staff: admins, and the instructors of the classes they joined."""
+    exams = await completed_exams(db, user.id)
+    history = await answer_history(db, user)
+    lessons = await lesson_slugs(db, user.id)
+    recent = (
+        await db.scalars(
+            select(ExamAttempt).where(ExamAttempt.user_id == user.id).order_by(ExamAttempt.started_at.desc()).limit(20)
+        )
+    ).all()
+    practice_count = (
+        await db.scalar(select(func.count()).select_from(PracticeAnswer).where(PracticeAnswer.user_id == user.id)) or 0
+    )
+    today = local_day(utcnow())
+    return LearnerReportOut(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        picture_url=user.picture_url,
+        last_active_at=user.last_active_at,
+        exam_date=user.exam_date,
+        daily_goal=user.daily_goal,
+        streak_days=streak(await active_days(db, user.id, today - timedelta(days=400)), today),
+        readiness=readiness(readiness_scores(exams)),
+        exams=exam_stats([e.score or 0 for e in exams]),
+        topics=topic_mastery(history, content),
+        lessons_completed=lesson_progress(lessons, content).completed,
+        lessons_total=len(content.core_lessons),
+        practice_answers=practice_count,
+        recent_exams=[exam_service.to_summary(e) for e in recent],
+        review=await review.summary(db, user.id),
     )

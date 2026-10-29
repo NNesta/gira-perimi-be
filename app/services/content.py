@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 import random
 import re
 import unicodedata
@@ -9,7 +10,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
+from app.core.config import settings
 from app.services.lesson_parser import parse_lesson
+
+logger = logging.getLogger(__name__)
 
 APP_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = APP_DIR / "data"
@@ -17,6 +21,7 @@ LESSONS_DIR = APP_DIR / "content" / "lessons"
 
 QUESTION_MEDIA = "/media/questions/"
 SIGN_MEDIA = "/media/signs/"
+AUDIO_MEDIA = "/media/audio/"
 
 TOPICS: list[dict] = [
     {
@@ -118,6 +123,23 @@ class Question:
     # Why the answer is right, in Kinyarwanda, and the article of law it rests on (admins can override both).
     explanation: str | None = None
     law_ref: str | None = None
+    # "Umva": the question (with its answers) read aloud, and the default explanation read aloud, with the hash of
+    # the text that clip reads (see audio_text_hash).
+    audio: str | None = None
+    explanation_audio: str | None = None
+    explanation_audio_hash: str | None = None
+
+
+def audio_text_hash(text: str) -> str:
+    """Identifies the text a clip reads; must match scripts/audio/generate.py."""
+    return hashlib.sha256(text.strip().encode()).hexdigest()[:16]
+
+
+def explanation_audio(question: Question, shown_text: str | None) -> str | None:
+    """The explanation's clip, if it still reads the explanation shown: an admin may have edited the text since."""
+    if not question.explanation_audio or not shown_text:
+        return None
+    return question.explanation_audio if audio_text_hash(shown_text) == question.explanation_audio_hash else None
 
 
 class ContentStore:
@@ -128,6 +150,7 @@ class ContentStore:
         self.version = hashlib.sha256(questions_raw + explanations_raw).hexdigest()[:16]
         raw_questions = json.loads(questions_raw)
         explanations: dict[str, dict] = json.loads(explanations_raw)
+        audio = self._load_audio(data_dir)
         self.questions: dict[int, Question] = {}
         for q in raw_questions:
             if q["topic"] not in TOPIC_IDS:
@@ -146,6 +169,9 @@ class ContentStore:
                 note=q.get("note"),
                 explanation=explanations.get(str(q["id"]), {}).get("text") or None,
                 law_ref=explanations.get(str(q["id"]), {}).get("law") or None,
+                audio=self._clip(audio.get("questions", {}).get(str(q["id"]))),
+                explanation_audio=self._clip(audio.get("explanations", {}).get(str(q["id"]))),
+                explanation_audio_hash=audio.get("explanations", {}).get(str(q["id"]), {}).get("hash"),
             )
         unknown = set(explanations) - {str(qid) for qid in self.questions}
         if unknown:
@@ -180,8 +206,29 @@ class ContentStore:
         for lesson in self.lessons:
             self._resolve_lesson(lesson)
         self.lessons_by_slug: dict[str, dict] = {lesson["slug"]: lesson for lesson in self.lessons}
+        # The lessons that prepare the theory exam: what study plans, lesson progress and badges count.
+        self.core_lessons: list[dict] = [lesson for lesson in self.lessons if not lesson["after_theory"]]
         if len(self.lessons_by_slug) != len(self.lessons):
             raise ValueError("duplicate lesson slugs")
+
+    # ------------------------------------------------------------------ audio
+    def _load_audio(self, data_dir: Path) -> dict:
+        """The "Umva" clips listed in audio.json (made by scripts/audio/generate.py), if any."""
+        self.audio_credit: str | None = None
+        path = data_dir / "audio.json"
+        if not path.exists():
+            return {}
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        if settings.PAYWALL_ENABLED and "-NC" in manifest.get("license", ""):
+            logger.warning("Audio is not served: its licence (%s) forbids commercial use", manifest.get("license"))
+            return {}
+        self.audio_credit = manifest.get("credit")
+        return manifest
+
+    @staticmethod
+    def _clip(entry: dict | None) -> str | None:
+        # The hash in the address changes with the text, so a regenerated clip is never served from a stale cache.
+        return f"{AUDIO_MEDIA}{entry['file']}?v={entry['hash']}" if entry else None
 
     # ------------------------------------------------------------------ lessons
     def _resolve_lesson(self, lesson: dict) -> None:

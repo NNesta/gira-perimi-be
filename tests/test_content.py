@@ -81,3 +81,44 @@ async def test_media_is_served(client):
     response = await client.get("/media/signs/b-1.webp")
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/webp"
+
+
+async def test_after_exam_lessons_are_listed_apart(client, content):
+    """The practical-test guide is a lesson for later: listed, but not part of the theory study plan."""
+    lessons = {lesson["slug"]: lesson for lesson in (await client.get("/api/v1/lessons")).json()}
+    assert lessons["ikizamini-cyo-gutwara"]["after_theory"] is True
+    assert lessons["umunsi-w-ikizamini"]["after_theory"] is False
+    assert "ikizamini-cyo-gutwara" not in {lesson["slug"] for lesson in content.core_lessons}
+    assert len(content.core_lessons) == len(content.lessons) - 1
+
+
+def test_audio_clips_follow_the_explanation_shown_and_the_licence(tmp_path, monkeypatch):
+    import json
+    import shutil
+
+    from app.core.config import settings
+    from app.services.content import DATA_DIR, ContentStore, audio_text_hash, explanation_audio
+
+    for name in ("questions.json", "explanations.json", "signs.json"):
+        shutil.copy(DATA_DIR / name, tmp_path / name)
+    default = json.loads((DATA_DIR / "explanations.json").read_text())["1"]["text"]
+    (tmp_path / "audio.json").write_text(
+        json.dumps(
+            {
+                "license": "CC-BY-NC-4.0",
+                "credit": "Amajwi: Meta MMS (CC BY-NC 4.0)",
+                "questions": {"1": {"file": "q1.mp3", "hash": "aaaa"}},
+                "explanations": {"1": {"file": "e1.mp3", "hash": audio_text_hash(default)}},
+            }
+        )
+    )
+    store = ContentStore(data_dir=tmp_path)
+    question = store.questions[1]
+    assert question.audio == "/media/audio/q1.mp3?v=aaaa" and store.audio_credit.startswith("Amajwi")
+    assert explanation_audio(question, default) == question.explanation_audio
+    assert explanation_audio(question, "An admin rewrote this explanation.") is None  # the clip no longer matches
+    assert store.questions[2].audio is None
+
+    monkeypatch.setattr(settings, "PAYWALL_ENABLED", True)  # non-commercial voice: never behind a paywall
+    paid = ContentStore(data_dir=tmp_path)
+    assert paid.questions[1].audio is None and paid.audio_credit is None

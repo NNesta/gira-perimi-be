@@ -29,11 +29,9 @@ from app.schemas.admin import (
 from app.schemas.common import Page
 from app.schemas.content import OptionOut
 from app.schemas.outcome import AdminTestimonialOut
-from app.services import exams as exam_service
-from app.services import explanations, outcomes, progress, review
+from app.services import explanations, outcomes, progress
 from app.services.content import TOPICS, ContentStore, Question
 from app.services.dates import KIGALI
-from app.services.practice import answer_history
 
 DAILY_WINDOW = 30
 
@@ -232,38 +230,14 @@ async def list_users(
 
 
 async def user_detail(db: AsyncSession, user: User, content: ContentStore) -> AdminUserDetailOut:
-    exams = await progress.completed_exams(db, user.id)
-    scores = [e.score or 0 for e in exams]
-    history = await answer_history(db, user)
-    lessons = await progress.lesson_slugs(db, user.id)
-    recent = (
-        await db.scalars(
-            select(ExamAttempt).where(ExamAttempt.user_id == user.id).order_by(ExamAttempt.started_at.desc()).limit(20)
-        )
-    ).all()
-    today = progress.local_day(utcnow())
+    report = await progress.learner_report(db, user, content)
     return AdminUserDetailOut(
-        id=user.id,
-        email=user.email,
-        name=user.name,
-        picture_url=user.picture_url,
+        **report.model_dump(),
         phone=user.phone,
         plan=user.plan,
         is_active=user.is_active,
         created_at=user.created_at,
         last_login_at=user.last_login_at,
-        last_active_at=user.last_active_at,
-        readiness=progress.readiness(progress.readiness_scores(exams)),
-        exams=progress.exam_stats(scores),
-        topics=progress.topic_mastery(history, content),
-        lessons_completed=len([s for s in lessons if s in content.lessons_by_slug]),
-        lessons_total=len(content.lessons),
-        practice_answers=await _count(db, PracticeAnswer, PracticeAnswer.user_id == user.id),
-        recent_exams=[exam_service.to_summary(e) for e in recent],
-        exam_date=user.exam_date,
-        daily_goal=user.daily_goal,
-        streak_days=progress.streak(await progress.active_days(db, user.id, today - timedelta(days=400)), today),
-        review=await review.summary(db, user.id),
     )
 
 

@@ -21,7 +21,7 @@ from app.schemas.practice import (
     PracticeMode,
 )
 from app.services import explanations, review
-from app.services.content import TOPICS, ContentStore, Question
+from app.services.content import TOPICS, ContentStore, Question, explanation_audio
 from app.services.explanations import Explanation
 
 # Offline answers older than this are not accepted (they would distort streaks and daily goals).
@@ -37,9 +37,11 @@ def to_question_out(q: Question, note: Explanation | None = None) -> QuestionWit
         image=q.image,
         options=[OptionOut(text=o.text, image=o.image) for o in q.options],
         topic=q.topic,
+        audio=q.audio,
         answer=q.answer,
         explanation=note.text,
         law_ref=note.law_ref,
+        explanation_audio=explanation_audio(q, note.text),
     )
 
 

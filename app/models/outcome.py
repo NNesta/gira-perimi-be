@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, ForeignKey, String, Text, UniqueConstraint, Uuid, false
+from sqlalchemy import Boolean, Date, Float, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, UTCDateTime, utcnow
@@ -26,6 +26,10 @@ class ExamOutcome(Base):
     testimonial: Mapped[str | None] = mapped_column(Text)
     testimonial_public: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     testimonial_status: Mapped[str] = mapped_column(String(12), default="pending")  # pending | approved | hidden
+    # Where the learner stood when they first answered: the average of their recent mock exams and how many counted.
+    # Grouped by average, these give the honest pass rates shown to others ("learners at your level passed X%").
+    recent_average: Mapped[float | None] = mapped_column(Float)
+    mock_exams: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
 

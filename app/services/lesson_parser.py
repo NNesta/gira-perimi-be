@@ -7,6 +7,7 @@ Supported syntax (kept deliberately small):
   > [!tone] Title     callout (tip, warning, info, law, key); body may hold paragraphs and lists
   ::signs A.1a B.1    gallery of road signs (codes resolved by the content store)
   ::diagram name      a drawing the frontend provides (names listed in content.DIAGRAMS)
+  stage: after        (frontmatter) a lesson for after the theory exam: listed apart, not in study plans or badges
   **bold**            inline emphasis (left to the renderer)
 """
 
@@ -118,6 +119,7 @@ def parse_lesson(text: str) -> dict:
         "topics": [t.strip() for t in meta.get("topics", "").split(",") if t.strip()],
         "minutes": int(meta.get("minutes", 5)),
         "free": meta.get("free", "false").lower() == "true",
+        "after_theory": meta.get("stage", "").strip().lower() == "after",
         "sources": [s.strip() for s in meta.get("sources", "").split("·") if s.strip()],
         "sections": [{"id": s["id"], "title": s["title"], "blocks": parse_blocks(s["lines"])} for s in sections],
     }

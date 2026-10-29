@@ -6,9 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.schemas.common import ORMModel
 from app.schemas.content import OptionOut
-from app.schemas.exam import ExamSummaryOut
-from app.schemas.progress import ExamStatsOut, ReadinessOut, TopicMasteryOut
-from app.schemas.review import ReviewSummaryOut
+from app.schemas.progress import LearnerReportOut
 
 
 class AdminLoginIn(BaseModel):
@@ -76,28 +74,12 @@ class AdminUserRowOut(BaseModel):
     readiness_status: str
 
 
-class AdminUserDetailOut(BaseModel):
-    id: uuid.UUID
-    email: str
-    name: str
-    picture_url: str | None
+class AdminUserDetailOut(LearnerReportOut):
     phone: str | None
     plan: str
     is_active: bool
     created_at: datetime
     last_login_at: datetime | None
-    last_active_at: datetime | None
-    readiness: ReadinessOut
-    exams: ExamStatsOut
-    topics: list[TopicMasteryOut]
-    lessons_completed: int
-    lessons_total: int
-    practice_answers: int
-    recent_exams: list[ExamSummaryOut]
-    exam_date: date | None
-    daily_goal: int
-    streak_days: int
-    review: ReviewSummaryOut
 
 
 class AdminUserUpdate(BaseModel):

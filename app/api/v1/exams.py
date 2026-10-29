@@ -5,10 +5,10 @@ from fastapi import APIRouter, HTTPException, Path, Query, status
 from sqlalchemy import select
 
 from app.core.deps import DB, Content, PaidUser
-from app.models import ExamAttempt
+from app.models import Challenge, ExamAttempt
 from app.schemas.exam import AnswerIn, AnswerSavedOut, ExamOut, ExamSummaryOut, ShareCodeOut, SubmitIn
+from app.services import challenges, explanations
 from app.services import exams as exam_service
-from app.services import explanations
 
 router = APIRouter(prefix="/exams", tags=["exams"])
 
@@ -42,7 +42,8 @@ async def _out(db: DB, attempt, content: Content) -> ExamOut:
     notes = None
     if attempt.is_completed:
         notes = await explanations.for_questions(db, content, [a.question_id for a in attempt.answers])
-    return exam_service.to_out(attempt, content, notes)
+    challenge = await db.get(Challenge, attempt.challenge_id) if attempt.challenge_id else None
+    return exam_service.to_out(attempt, content, notes, challenge.code if challenge else None)
 
 
 @router.get("/{exam_id}")
@@ -84,6 +85,15 @@ async def submit_exam(
     sheet = {a.position: a.selected for a in body.answers} if body else None
     await exam_service.submit(db, attempt, content, sheet)
     return await _out(db, attempt, content)
+
+
+@router.post("/{exam_id}/challenge")
+async def challenge_friends(exam_id: uuid.UUID, db: DB, user: PaidUser) -> ShareCodeOut:
+    """Offers this finished exam's 20 questions to friends ("Hangana nanjye"); the same code every time."""
+    attempt = await _load(db, user, exam_id)
+    if not attempt.is_completed:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Banza usoze ikizamini, hanyuma uhamagare inshuti.")
+    return ShareCodeOut(code=(await challenges.for_exam(db, attempt)).code)
 
 
 @router.post("/{exam_id}/share")

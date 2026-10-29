@@ -89,3 +89,29 @@ def test_sentry_only_starts_with_a_dsn(monkeypatch):
     assert monitoring.init_sentry("api") is True
     assert calls[0]["send_default_pii"] is False and calls[0]["max_request_body_size"] == "never"
     assert calls[0]["include_local_variables"] is False and calls[0]["https_proxy"] == "http://proxy.server:3128"
+
+
+async def test_pass_rates_by_level_once_enough_learners_answered(client, db, monkeypatch):
+    from app.models import ExamOutcome
+    from app.services import outcomes
+    from tests.test_exams import seed_completed_exams
+
+    monkeypatch.setattr(settings, "OUTCOME_MIN_ANSWERS", 4)
+    day = local_day(utcnow()) - timedelta(days=3)
+    for i, (average, result) in enumerate([(16.2, "passed"), (15.0, "passed"), (16.9, "failed"), (15.4, "passed")]):
+        learner = await login(client, email=f"band{i}@gmail.com", name=f"Band{i} Uwase")
+        db.add(ExamOutcome(user_id=uuid.UUID(learner["id"]), exam_date=day, result=result, recent_average=average))
+    db.add(ExamOutcome(user_id=uuid.UUID(learner["id"]), exam_date=day - timedelta(days=40), result="not_taken"))
+    await db.commit()
+
+    keza = await login(client)
+    await seed_completed_exams(db, uuid.UUID(keza["id"]), [16] * 11)
+    prediction = (await client.get("/api/v1/me/dashboard")).json()["prediction"]
+    assert prediction == {"band_low": 15.0, "band_high": 17.0, "reports": 4, "passed": 3, "pass_rate": 0.75}
+    assert await outcomes.prediction(db, 13.5) is None  # nobody at that level yet
+
+    # Keza's own answer records where she stood: her recent average and how many exams counted.
+    exam_day = await exam_was(db, keza["id"], 1)
+    await client.post("/api/v1/me/outcome", json={"exam_date": exam_day, "result": "passed"})
+    mine = await outcomes.for_date(db, uuid.UUID(keza["id"]), local_day(utcnow()) - timedelta(days=1))
+    assert mine.recent_average == 16.0 and mine.mock_exams == 11

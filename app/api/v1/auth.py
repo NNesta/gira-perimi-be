@@ -13,7 +13,7 @@ from app.core.security import USER_COOKIE, clear_session_cookie, create_token, s
 from app.models import User
 from app.schemas.user import AuthConfigOut, EmailLinkIn, EmailLoginIn, GoogleLoginIn, UserOut
 from app.services import auth as auth_service
-from app.services import email_login, mail
+from app.services import email_login, mail, schools
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -135,6 +135,9 @@ async def logout_everywhere(response: Response, db: DB, user: CurrentUser) -> No
     clear_session_cookie(response, USER_COOKIE)
 
 
-@router.get("/me", response_model=UserOut)
-async def me(user: CurrentUser) -> User:
-    return user
+@router.get("/me")
+async def me(db: DB, user: CurrentUser) -> UserOut:
+    """The signed-in learner, and whether they teach at a driving school (the site then links to /umwarimu)."""
+    out = UserOut.model_validate(user)
+    out.instructor = await schools.is_instructor(db, user)
+    return out

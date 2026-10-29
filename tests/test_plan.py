@@ -63,7 +63,7 @@ async def test_dashboard_today_and_plan(client, content, db):
     plan = dash["plan"]
     assert plan["days_left"] == 22 and plan["exams_left"] == 11 and plan["pace"] == "on_track"
     assert plan["exam_every_days"] == 2 and plan["exams_per_day"] is None
-    assert plan["lessons_left"] == len(content.lessons) - 1
+    assert plan["lessons_left"] == len(content.core_lessons) - 1
     assert dash["review"]["learning"] == 1
 
     await client.patch("/api/v1/me", json={"exam_date": (today + timedelta(days=4)).isoformat()})

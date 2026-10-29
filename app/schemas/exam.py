@@ -20,6 +20,9 @@ class ExamItemOut(BaseModel):
     is_correct: bool | None = None
     explanation: str | None = None
     law_ref: str | None = None
+    # The question read aloud (also while the exam runs); the explanation's clip once it is over.
+    audio: str | None = None
+    explanation_audio: str | None = None
 
 
 class ExamOut(BaseModel):
@@ -36,6 +39,8 @@ class ExamOut(BaseModel):
     passed: bool | None
     answered: int
     items: list[ExamItemOut]
+    # Set when this exam is a friend's challenge: its code, for the comparison on the result page.
+    challenge_code: str | None = None
 
 
 class ShareCodeOut(BaseModel):

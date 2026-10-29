@@ -23,6 +23,10 @@ from app.services.practice import questions_out
 router = APIRouter(tags=["content"])
 
 SEARCH_LIMIT = 30
+LESSON_SUMMARY_FIELDS = (
+    *("slug", "order", "title", "summary", "icon", "topics"),
+    *("minutes", "free", "question_count", "after_theory"),
+)
 
 
 async def _completed_slugs(db: DB, user: OptionalUser) -> set[str]:
@@ -46,6 +50,7 @@ async def overview(content: Content) -> OverviewOut:
             readiness_min_average=settings.READINESS_MIN_AVERAGE,
             readiness_recent_exams=settings.READINESS_RECENT_EXAMS,
         ),
+        audio_credit=content.audio_credit,
     )
 
 
@@ -75,10 +80,7 @@ async def lessons(content: Content, db: DB, user: OptionalUser) -> list[LessonSu
     unlocked = has_access(user)
     return [
         LessonSummaryOut(
-            **{
-                k: lesson[k]
-                for k in ("slug", "order", "title", "summary", "icon", "topics", "minutes", "free", "question_count")
-            },
+            **{k: lesson[k] for k in LESSON_SUMMARY_FIELDS},
             sections=[s["title"] for s in lesson["sections"]],
             completed=lesson["slug"] in done,
             locked=not (lesson["free"] or unlocked),

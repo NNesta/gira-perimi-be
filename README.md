@@ -12,7 +12,11 @@ the provisional driving-licence theory exam.
 - **Spaced review** ("Isubiramo"): mistakes and unknown signs come back after 1, 3, 7, 14 and 30 days.
 - **Study plan**: exam date, daily goal, streak, today's checklist, and opt-in daily reminder emails.
 - **Offline study**: an offline copy of the bank for the installable app, and safe syncing of answers given offline.
-- Google sign-in for learners, email + password sign-in for admins, progress tracking, readiness recommendation,
+- **"Umva"**: every question (with its answers) and every explanation read aloud in Kinyarwanda.
+- **"Hangana nanjye"**: a finished mock exam's 20 questions sent to friends, who sit the same paper; scores compared.
+- **Driving schools**: instructors make classes with a join code and follow their learners' readiness and weak topics.
+- **Honest pass predictions**: "learners at your level passed X%", from what learners reported after the real exam.
+- Google sign-in or a one-time sign-in link by email for learners, email + password sign-in for admins, progress tracking, readiness recommendation,
   admin dashboard, and a paywall hook for future subscriptions.
 
 Stack: Python 3.12 · FastAPI · SQLAlchemy 2 (async) · SQLite (aiosqlite) · Alembic · Pydantic v2 · PyJWT · bcrypt · google-auth.
@@ -33,7 +37,8 @@ origin are rejected with `403` as a CSRF safeguard.
 
 ### Google sign-in (learners)
 
-Learners register and sign in **only** with Google; there is no learner email/password form.
+Learners register and sign in with Google, or with a one-time link sent by email (below); there is no learner
+password.
 
 1. Open [Google Cloud Console → Google Auth Platform](https://console.cloud.google.com/auth/overview) and create a
    project if you have none.
@@ -55,6 +60,26 @@ Returning learners are matched by their Google account id, then by email. Name a
 `POST /auth/google` answers `401` for an invalid token and `503` when Google sign-in is not configured or Google's
 signing keys cannot be fetched (the error log then says why). On hosts that only reach the internet through a proxy,
 set `OUTBOUND_PROXY` — on PythonAnywhere free accounts, `OUTBOUND_PROXY=http://proxy.server:3128`.
+
+### Sign-in links by email (learners without Google)
+
+For learners who cannot use the Google button: a phone set up by its seller (Gmail opens on the phone, but nobody knows
+the password), or no Gmail at all. `POST /auth/email` emails a link to `/injira/imeyili?token=...`; it works **once**,
+for `EMAIL_LOGIN_MINUTES` (15), and registers the learner on first use (with the name they typed, if any). Opening the
+link shows a button, and only pressing it signs in (`POST /auth/email/verify`): mail scanners open links on their own
+and would otherwise use them up. Only a hash of each token is stored. Requests are limited per address
+(`EMAIL_LOGIN_PER_ADDRESS` per 15 minutes) and per visitor (`EMAIL_LOGIN_PER_VISITOR` per hour), the answer is the same
+whether or not an account exists, and suspended accounts get no link.
+
+The option appears on `/injira` only when SMTP is set up (the same settings as reminders). A link never changes an
+existing account's name or photo; learners without a Google account can set their name on their profile.
+
+### Sessions
+
+Session cookies are signed tokens that carry the account's `session_version`. Raising it cancels every session issued
+before, on every device: "Sohoka ku bikoresho byose" (`POST /auth/logout-all`) on the profile, a suspension by an admin
+(sessions stay cancelled even if the suspension is lifted), and an admin password reset (`create-admin` on an existing
+admin). Sessions issued before this existed count as version 0, so upgrading signs nobody out.
 
 ### Admin accounts
 
@@ -144,6 +169,60 @@ worked out from data the app already keeps, so nothing new is stored.
 `POST /exams/{id}/share` gives a passed exam a short public code (created once); `GET /share/{code}` returns only the
 learner's first name, score and day, for the result card at `/natsinze/<code>` on the website.
 
+### "Umva": questions and explanations read aloud
+
+`media/audio/q<id>.mp3` reads a question with its four answers ("a: …, be: …, se: …, de: …"); `e<id>.mp3` reads its
+default explanation. `app/data/audio.json` lists them with a hash of the text each one reads; questions carry `audio`
+and `explanation_audio` URLs (versioned by that hash, so a regenerated clip is never served from a stale cache). An
+explanation an admin has edited no longer matches its clip, so its audio is left out until the clips are regenerated.
+
+The voice is Meta's MMS model for Kinyarwanda (`facebook/mms-tts-kin`), generated once by `scripts/audio/generate.py`
+(about 4 hours of speech, 43 MB; numbers, units and sign codes are written out in words first, see
+`scripts/audio/speech_text.py`):
+
+```bash
+uv run --no-project --python cpython-3.12-macos-aarch64-none \
+  --with "torch>=2.5" --with "transformers>=4.45" --with numpy python scripts/audio/generate.py [--limit 3]
+```
+
+(`--no-project` keeps torch out of the project; on an Apple Silicon Mac, ask for an arm64 Python as above, since torch
+has no Intel-Mac builds. ffmpeg encodes the MP3s. A rerun only redoes clips whose text changed.)
+
+**Licence: CC BY-NC 4.0 (non-commercial).** The site shows the credit the licence asks for (`audio_credit` in
+`GET /overview`), and the API stops serving these clips as soon as `PAYWALL_ENABLED` is on. Before charging, replace
+them with a commercially licensed voice or real recordings (same file names). Have native speakers listen first:
+numbers are read as plain counting numbers, without the agreement a speaker would make.
+
+### "Hangana nanjye": challenge a friend
+
+`POST /exams/{id}/challenge` turns a finished exam into a challenge (one per exam, same code every time).
+`GET /challenges/{code}` (public) shows the author's first name and score; the others' results only to the author and
+to those who finished it. `POST /challenges/{code}/start` (signed in) starts the same 20 questions, in the same order,
+under the same rules; a friend gets one go, the author none, and a learner with another exam running is asked to finish
+it first. The friend's exam counts like any other mock exam, and carries `challenge_code` for the comparison.
+
+### Pass rates by level ("learners at your level passed X%")
+
+When a learner answers "Watsinze ikizamini?", their recent mock average and number of counted exams are kept with the
+answer. The dashboard's `prediction` gives, for the learner's band (under 12, 12–15, 15–17, 17–20 out of 20), how many
+who reported a result passed, but only once the band holds `OUTCOME_MIN_ANSWERS` reports.
+
+### Driving schools
+
+An admin opens a school (`POST /admin/schools`) and lists its instructors by email (`POST
+/admin/schools/{id}/instructors`, emailed an invitation when SMTP is set). Whoever signs in with one of those addresses
+(Google or an email link) is an instructor there (`instructor` in `GET /auth/me`): they make classes (`POST
+/teaching/schools/{id}/classes`), each with a 6-character join code, and see every learner's readiness, recent average
+and weak topics (`GET /teaching/classes/{id}`), and each learner's report (the admin's view without account details).
+A learner joins with the code (`POST /classes/join`) after agreeing that the school's instructors see their progress,
+and can leave at any time (`DELETE /me/classes/{id}`). Closing a school ends its instructors' access; archiving a
+class stops new learners joining. Nothing is deleted either way.
+
+### Lessons for after the theory exam
+
+A lesson whose frontmatter has `stage: after` (the practical-test guide) is listed apart and left out of study plans,
+lesson progress and the "every lesson" badge.
+
 ### Search and mistakes
 
 `GET /questions/search?q=&topic=` searches the question, its answers and its explanation, ignoring case, accents and
@@ -173,7 +252,7 @@ Exam format source: Rwanda National Police (20 questions, 20 minutes, 60% to pas
 
 | Area | Endpoints |
 |---|---|
-| Auth | `GET /auth/config`, `POST /auth/google`, `POST /auth/logout`, `GET /auth/me` |
+| Auth | `GET /auth/config`, `POST /auth/google`, `POST /auth/email`, `POST /auth/email/verify`, `POST /auth/logout`, `POST /auth/logout-all`, `GET /auth/me` |
 | Public content | `GET /overview`, `/topics`, `/lessons`, `/lessons/{slug}`, `/signs`, `/questions/sample` |
 | Mock exams | `POST /exams` (start or resume), `GET /exams`, `GET /exams/{id}`, `PUT /exams/{id}/answers/{position}`, `POST /exams/{id}/submit` |
 | Practice | `GET /practice/questions?topic=&mode=random\|new\|mistakes&count=`, `POST /practice/answers`, `POST /practice/answers/offline`, `GET /practice/mistakes`, `GET\|POST /practice/placement` |
@@ -183,6 +262,8 @@ Exam format source: Rwanda National Police (20 questions, 20 minutes, 60% to pas
 | Phone notifications | `PUT /push/subscription`, `POST /push/unsubscribe`, `POST /push/test` |
 | Review | `GET /review`, `POST /review/signs` |
 | Offline | `GET /offline/pack` |
+| Audio, challenges | `audio`/`explanation_audio` on questions, `POST /exams/{id}/challenge`, `GET /challenges/{code}` (public), `POST /challenges/{code}/start` |
+| Driving schools | `GET\|POST /admin/schools`, `PATCH /admin/schools/{id}`, `POST\|DELETE /admin/schools/{id}/instructors[/{id}]`, `GET /teaching`, `POST /teaching/schools/{id}/classes`, `GET\|PATCH /teaching/classes/{id}`, `GET\|DELETE /teaching/classes/{id}/learners/{user_id}`, `GET /classes/join/{code}` (public), `POST /classes/join`, `GET /me/classes`, `DELETE /me/classes/{id}` |
 | Learner | `GET /me/dashboard`, `PATCH /me` (phone, exam date, daily goal, reminders, onboarded), `DELETE /me`, `PUT\|DELETE /me/lessons/{slug}` |
 | Reminders | `POST /reminders/unsubscribe?token=` (public, signed token) |
 | Admin | `POST /admin/auth/login`, `POST /admin/auth/logout`, `GET /admin/auth/me`, `GET /admin/stats`, `GET /admin/users`, `GET\|PATCH\|DELETE /admin/users/{id}`, `GET /admin/questions`, `PUT\|DELETE /admin/questions/{id}/explanation` |
@@ -197,6 +278,7 @@ Images are served from `/media/questions/*` and `/media/signs/*`.
 | `app/data/signs.json` | Sign catalogue (code, category, name, description) |
 | `app/data/explanations.json` | Default explanation and law reference per question |
 | `app/content/lessons/*.md` | Lessons in a small Markdown dialect (see `app/services/lesson_parser.py`) |
+| `app/data/audio.json`, `media/audio/` | "Umva" clips and their list (made by `scripts/audio/generate.py`) |
 | `media/` | WebP images for questions and signs |
 
 Notes on the question bank:
@@ -235,7 +317,7 @@ Manual fixes found while reviewing the contact sheets are encoded in `build_bank
 git pull                     # or upload the changed files
 uv sync --no-dev
 uv run python -m app.cli backup   # a fresh copy of the database before touching it
-uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0005 shared results · 0006 outcomes · 0007 answered count
+uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0005 shared results · 0006 outcomes · 0007 answered count · 0008 sessions + email links · 0009 challenges, schools, outcome levels
 ```
 
 Then reload the web app. On PythonAnywhere: `pa website reload --domain <your domain>`.
@@ -286,6 +368,12 @@ host.
 lesson not marked `free: true` answer `402 Payment Required` for learners without an active premium plan.
 Admins can switch a learner's plan from the admin dashboard (`PATCH /admin/users/{id}`).
 
+## Product screenshots
+
+The phone screenshots on the website's home page are real pages, taken for a demo learner. `scripts/demo_screens.py`
+creates a throwaway database with that learner (`uv run python -m scripts.demo_screens /tmp/tsinda-demo.db`, which
+prints a session token); `gira-perimi-fe/scripts/screenshots.mjs` explains the rest.
+
 ## Tests and linting
 
 ```bash
@@ -297,6 +385,8 @@ uv run ruff check . && uv run ruff format --check .
 
 - `ENVIRONMENT=production`, a random `SECRET_KEY` (≥ 32 chars), real `GOOGLE_CLIENT_ID` and `FRONTEND_ORIGINS`.
 - Serve over HTTPS (cookies become `Secure` automatically); `/docs` is disabled in production.
+- Set up SMTP: besides reminders, it is what offers learners without Google the sign-in link by email.
+- Before `PAYWALL_ENABLED`: replace the non-commercial MMS audio (the API stops serving it once the paywall is on).
 - Run `python -m app.cli backup`, then `uv run alembic upgrade head`, on every deploy; schedule `python -m app.cli daily`.
 - Set `SENTRY_DSN` so crashes reach you before learners report them.
 - The admin login rate limiter is in-process: run a single API worker, or move it to a shared store. It tells visitors

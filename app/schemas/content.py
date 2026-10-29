@@ -15,6 +15,8 @@ class QuestionOut(BaseModel):
     image: str | None
     options: list[OptionOut]
     topic: str
+    # "Umva": the question and its answers read aloud (MP3), when there is a clip.
+    audio: str | None = None
 
 
 class QuestionWithAnswerOut(QuestionOut):
@@ -22,6 +24,7 @@ class QuestionWithAnswerOut(QuestionOut):
     # Why the answer is right, and the article of law behind it (when known).
     explanation: str | None = None
     law_ref: str | None = None
+    explanation_audio: str | None = None
 
 
 class TopicOut(BaseModel):
@@ -44,6 +47,8 @@ class LessonSummaryOut(BaseModel):
     free: bool
     question_count: int
     sections: list[str]
+    # For after the theory exam (the practical test): listed apart, not counted in study plans.
+    after_theory: bool = False
     completed: bool = False
     locked: bool = False
 
@@ -69,6 +74,7 @@ class LessonOut(BaseModel):
     minutes: int
     free: bool
     question_count: int
+    after_theory: bool = False
     sources: list[str]
     sections: list[LessonSectionOut]
     completed: bool = False
@@ -118,3 +124,5 @@ class OverviewOut(BaseModel):
     signs: int
     topics: int
     exam: ExamRulesOut
+    # Credit owed for the voice of the audio clips (its licence asks for it), when there are clips.
+    audio_credit: str | None = None

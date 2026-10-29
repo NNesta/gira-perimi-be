@@ -25,7 +25,7 @@ async def test_badges_follow_what_the_learner_did(client, db, content):
     assert fresh["earned"] == 0 and fresh["total"] == len(fresh["items"]) == 12
     by_id = {b["id"]: b for b in fresh["items"]}
     assert by_id["ibyapa-byose"]["target"] == len(content.ids_by_topic["ibyapa"])
-    assert by_id["amasomo-yose"]["target"] == len(content.lessons)
+    assert by_id["amasomo-yose"]["target"] == len(content.core_lessons)
 
     await seed_completed_exams(db, user_id, [11, 13, 20])  # one per day, three days in a row
     now = utcnow()

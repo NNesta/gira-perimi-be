@@ -20,7 +20,8 @@ async def badges(db: AsyncSession, user: User, content: ContentStore) -> BadgesO
     days = await progress.active_days(db, user.id, since=date(2000, 1, 1))
     longest = progress.longest_streak(days)
     answered = (await progress.answered_since(db, EPOCH, [user.id])).get(user.id, 0)
-    lessons = len({s for s in await progress.lesson_slugs(db, user.id) if s in content.lessons_by_slug})
+    core = [lesson["slug"] for lesson in content.core_lessons]
+    lessons = len(set(await progress.lesson_slugs(db, user.id)) & set(core))
     sign_questions = set(content.ids_by_topic["ibyapa"])
     signs_right = len({qid for qid, ok, _ in await answer_history(db, user) if ok and qid in sign_questions})
     questions, pass_mark = settings.EXAM_QUESTION_COUNT, settings.EXAM_PASS_MARK
@@ -62,7 +63,7 @@ async def badges(db: AsyncSession, user: User, content: ContentStore) -> BadgesO
             signs_right,
             len(sign_questions),
         ),
-        ("amasomo-yose", "Amasomo yose", f"Soma amasomo {len(content.lessons)} yose.", lessons, len(content.lessons)),
+        ("amasomo-yose", "Amasomo yose", f"Soma amasomo {len(core)} yose.", lessons, len(core)),
     ]
     items = [
         BadgeOut(

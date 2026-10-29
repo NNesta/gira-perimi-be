@@ -21,6 +21,8 @@ class UserOut(ORMModel):
     onboarded: bool
     # Signed in with Google at least once: name and photo come from Google (and are not edited here).
     google_account: bool
+    # Teaches at a driving school (filled by GET /auth/me only).
+    instructor: bool = False
 
 
 class UserUpdate(BaseModel):

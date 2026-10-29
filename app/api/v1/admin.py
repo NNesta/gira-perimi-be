@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.deps import DB, Content, CurrentAdmin
 from app.core.ratelimit import SlidingWindowLimiter, client_ip
 from app.core.security import ADMIN_COOKIE, clear_session_cookie, create_token, set_session_cookie
-from app.models import Admin, ExamOutcome, User
+from app.models import Admin, ExamOutcome, School, User
 from app.schemas.admin import (
     AdminLoginIn,
     AdminOut,
@@ -24,8 +24,10 @@ from app.schemas.admin import (
 )
 from app.schemas.common import Page
 from app.schemas.outcome import AdminTestimonialOut, TestimonialStatus, TestimonialUpdate
+from app.schemas.school import InstructorIn, SchoolAdminOut, SchoolCreate, SchoolUpdate
 from app.services import admin as admin_service
 from app.services import auth as auth_service
+from app.services import schools as school_service
 from app.services.content import TOPIC_IDS, Question
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -175,3 +177,56 @@ async def moderate_testimonial(outcome_id: uuid.UUID, body: TestimonialUpdate, _
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ubu buhamya ntibubonetse.")
     outcome.testimonial_status = body.status
     await db.commit()
+
+
+# ---------------------------------------------------------------------- driving schools
+async def _school(db: DB, school_id: uuid.UUID):
+    try:
+        return await school_service.get_school(db, school_id)
+    except school_service.NotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Iryo shuri ntiribonetse.") from exc
+
+
+async def _school_out(db: DB, school_id: uuid.UUID) -> SchoolAdminOut:
+    return next(s for s in await school_service.admin_list(db) if s.id == school_id)
+
+
+@router.get("/schools")
+async def schools(_: CurrentAdmin, db: DB) -> list[SchoolAdminOut]:
+    """Driving schools, their instructors (by email) and how many classes and learners they have."""
+    return await school_service.admin_list(db)
+
+
+@router.post("/schools", status_code=status.HTTP_201_CREATED)
+async def create_school(body: SchoolCreate, _: CurrentAdmin, db: DB) -> SchoolAdminOut:
+    school = School(name=" ".join(body.name.split()))
+    db.add(school)
+    await db.commit()
+    return await _school_out(db, school.id)
+
+
+@router.patch("/schools/{school_id}")
+async def update_school(school_id: uuid.UUID, body: SchoolUpdate, _: CurrentAdmin, db: DB) -> SchoolAdminOut:
+    """Renames a school, or closes it (its instructors lose access; nothing is deleted) and reopens it."""
+    school = await _school(db, school_id)
+    if body.name is not None:
+        school.name = " ".join(body.name.split())
+    if body.active is not None:
+        school.active = body.active
+    await db.commit()
+    return await _school_out(db, school.id)
+
+
+@router.post("/schools/{school_id}/instructors")
+async def add_instructor(school_id: uuid.UUID, body: InstructorIn, _: CurrentAdmin, db: DB) -> SchoolAdminOut:
+    """Whoever signs in with this address teaches at the school; they are told by email when email is set up."""
+    await school_service.invite(db, await _school(db, school_id), body.email)
+    return await _school_out(db, school_id)
+
+
+@router.delete("/schools/{school_id}/instructors/{instructor_id}")
+async def remove_instructor(school_id: uuid.UUID, instructor_id: uuid.UUID, _: CurrentAdmin, db: DB) -> SchoolAdminOut:
+    school = await _school(db, school_id)
+    school.instructors = [i for i in school.instructors if i.id != instructor_id]
+    await db.commit()
+    return await _school_out(db, school_id)
