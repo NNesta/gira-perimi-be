@@ -10,7 +10,7 @@ from app.api.v1 import api_router
 from app.core.config import settings
 from app.core.monitoring import init_sentry
 from app.db.schema import check_schema
-from app.db.session import engine
+from app.db.session import engine, leave_wal
 from app.services.content import get_content
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
@@ -31,6 +31,7 @@ class CachedStaticFiles(StaticFiles):
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_content()  # parse question bank, lessons and signs once; fail fast on broken content
+    await leave_wal(engine)
     await check_schema(engine)  # a forgotten migration stops the API here, with the command to run
     yield
     await engine.dispose()

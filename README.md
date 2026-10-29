@@ -322,9 +322,23 @@ uv run alembic upgrade head  # 0002 study plan · 0003 welcome · 0004 push · 0
 
 Then reload the web app. On PythonAnywhere: `pa website reload --domain <your domain>`.
 
-The API refuses to start on a database that is not at the code's newest migration (`app/db/schema.py`). If the site
-is down after a deploy, the error log says why, e.g. *"The database is at migration 0006, but this code needs 0009"*,
-with the command to run. Databases built without Alembic (tests, the screenshot demo) are not checked.
+The API refuses to start on a database that is not at the code's newest migration, or that lacks a column the code
+uses (`app/db/schema.py`). If the site is down after a deploy, the error log says why and names the database file,
+e.g. *"The database /home/you/gira-perimi-be/gira_perimi.db is at migration 0006, but this code needs 0009"*, with
+the command to run. Databases built without Alembic (tests, the screenshot demo) are not checked.
+
+The SQLite database uses the classic rollback journal, not WAL. WAL needs every process on one machine, but on
+PythonAnywhere the website, consoles and scheduled tasks run on different machines over a network filesystem, so under
+WAL the website can miss what a console wrote, a migration included. Earlier versions turned WAL on; the API turns it
+off when it starts, unless another process has the database open (the error log then says *"still in WAL mode"*). In
+that case, disable the website on the Web tab, run this from the project folder, then enable the website again:
+
+```bash
+.venv/bin/python -c "import sqlite3; db = sqlite3.connect('gira_perimi.db'); print(db.execute('PRAGMA wal_checkpoint(TRUNCATE)').fetchone(), db.execute('PRAGMA journal_mode=DELETE').fetchone())"
+```
+
+It must end with `('delete',)`. SQLite is fine for a single small site; PythonAnywhere recommends MySQL once
+traffic grows.
 
 ## The daily task: backup, then reminders
 
@@ -392,6 +406,7 @@ uv run ruff check . && uv run ruff format --check .
 - Set up SMTP: besides reminders, it is what offers learners without Google the sign-in link by email.
 - Before `PAYWALL_ENABLED`: replace the non-commercial MMS audio (the API stops serving it once the paywall is on).
 - Run `python -m app.cli backup`, then `uv run alembic upgrade head`, on every deploy; schedule `python -m app.cli daily`.
+- SQLite must not be in WAL mode on a network filesystem such as PythonAnywhere's (see *Deploying an update*).
 - Set `SENTRY_DSN` so crashes reach you before learners report them.
 - The admin login rate limiter is in-process: run a single API worker, or move it to a shared store. It tells visitors
   apart by `X-Forwarded-For`: set `TRUSTED_PROXY_HOPS` to the number of your servers that add to that header (the
